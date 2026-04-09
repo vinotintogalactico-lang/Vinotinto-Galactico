@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Portada de Prueba</title>
+</head>
+<body>
+  <nav>
+    <!-- Anchor link — should be excluded -->
+    <a href="#section">Ir a sección</a>
+    <!-- Social media — should be excluded -->
+    <a href="https://twitter.com/example">Twitter</a>
+    <!-- Tag page — should be excluded -->
+    <a href="https://example.com/tag/futbol">Tag Fútbol</a>
+    <!-- Non-article page — should be excluded (no article pattern) -->
+    <a href="https://example.com/contacto">Contacto</a>
+  </nav>
+
+  <main>
+    <!-- Valid article 1 (absolute) -->
+    <a href="https://example.com/noticias/articulo-1">Artículo 1</a>
+    <!-- Valid article 2 (absolute) -->
+    <a href="https://example.com/2024/nota">Nota 2024</a>
+    <!-- Valid article 3 (relative) — should be resolved to absolute -->
+    <a href="/futbol/partido-hoy.html">Partido de hoy</a>
+  </main>
+</body>
+</html>
