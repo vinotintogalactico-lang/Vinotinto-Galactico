@@ -66,6 +66,7 @@ st.markdown("""
 .vg-banner-wrap img {
     width: 100%;
     height: auto;
+    max-height: 250px;
     object-fit: contain;
     display: block;
 }
@@ -267,10 +268,11 @@ with col_btn_prensa:
         
         button_html = f"""
         <style>
-        body {{ margin: 0; padding: 0; font-family: 'Bebas Neue', sans-serif; background: transparent; overflow: hidden; }}
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+        body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; }}
         button {{
             background: linear-gradient(135deg, #7a1a2e, #c0392b);
-            color: white; border: none; padding: .75rem 1.5rem;
+            color: white; border: none; padding: .65rem 1rem;
             font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
             letter-spacing: 3px; border-radius: 6px; cursor: pointer;
             width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
