@@ -221,6 +221,41 @@ with st.sidebar:
     st.markdown("---")
     total_sel = sum(len(v) for v in selected.values())
     st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
+    
+    # ── BOTÓN DE PRENSA DEPORTIVA EN EL SIDEBAR ──
+    st.markdown("---")
+    st.markdown("## 🗞️ Herramientas")
+    
+    paths = [
+        Path("Prensa_Deportiva.html"),
+        Path("Prensa Deportiva/Prensa_Deportiva.html"),
+        Path("Prensa Deportiva/Prensa_Deportiva.html").resolve(),
+        Path("VG_Extractor/Prensa Deportiva/Prensa_Deportiva.html"),
+        Path("../Prensa Deportiva/Prensa_Deportiva.html")
+    ]
+    
+    html_content = None
+    for p in paths:
+        if p.exists():
+            try:
+                html_content = p.read_bytes()
+                break
+            except Exception:
+                pass
+                
+    if html_content:
+        b64_html = base64.b64encode(html_content).decode()
+        st.markdown(
+            f'<a href="data:text/html;base64,{b64_html}" target="_blank" '
+            f'style="display:block; background:linear-gradient(135deg, #7a1a2e, #c0392b); '
+            f'color:white; padding:0.8rem; text-align:center; border-radius:6px; '
+            f'font-family:\'Bebas Neue\',sans-serif; font-size:1.2rem; letter-spacing:2px; '
+            f'text-decoration:none; box-shadow:0 4px 15px rgba(192,57,43,0.4);">'
+            f'🗞️ ABRIR PRENSA DEPORTIVA</a>', 
+            unsafe_allow_html=True
+        )
+    else:
+        st.warning("⚠️ Sube tu archivo Prensa_Deportiva.html para activar el botón.")
 
 # ── BARRA DE TÍTULO + BOTÓN EXTRAER (en el área principal) ───────────────────
 col_title, col_btn = st.columns([4, 1])
