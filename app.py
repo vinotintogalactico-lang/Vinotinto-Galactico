@@ -268,14 +268,15 @@ with col_btn_prensa:
         
         button_html = f"""
         <style>
-        body {{ margin: 0; padding: 0; font-family: 'Bebas Neue', sans-serif; background: transparent; }}
+        body {{ margin: 0; padding: 0; font-family: 'Bebas Neue', sans-serif; background: transparent; overflow: hidden; }}
         button {{
             background: linear-gradient(135deg, #7a1a2e, #c0392b);
-            color: white; border: none; padding: 0.6rem;
-            font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
-            letter-spacing: 2px; border-radius: 6px; cursor: pointer;
+            color: white; border: none; padding: 0.5rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem;
+            letter-spacing: 1px; border-radius: 6px; cursor: pointer;
             width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
             transition: all 0.2s ease;
+            box-sizing: border-box;
         }}
         button:hover {{ box-shadow: 0 6px 20px rgba(192,57,43,0.7); transform: translateY(-1px); }}
         </style>
@@ -294,7 +295,7 @@ with col_btn_prensa:
         }}
         </script>
         """
-        components.html(button_html, height=50)
+        components.html(button_html, height=65)
     else:
         st.markdown(
             f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
@@ -415,16 +416,16 @@ if st.session_state.resultado:
                 n_author = n.get("author", "")
                 n_body = n.get("body", "")
                 
-                st.markdown(f"#### [{n_title}]({n_url})")
+                st.markdown(f"##### [{n_title}]({n_url})")
                 
                 cols = st.columns([1, 4])
                 if n_imagen:
                     cols[0].image(n_imagen, use_container_width=True)
                 
                 with cols[1]:
-                    st.caption(f"**Fuente:** {n_fuente} · **Categoría:** {n_categoria} · **Fecha:** {n_date} · **Autor:** {n_author}")
+                    st.markdown(f"<div style='color:#c0392b; font-size:0.95rem; font-weight:600; margin-bottom:0.4rem; font-family:sans-serif;'>📌 Fuente: {n_fuente} &nbsp;|&nbsp; Categoría: {n_categoria} &nbsp;|&nbsp; Fecha: {n_date} &nbsp;|&nbsp; Autor: {n_author}</div>", unsafe_allow_html=True)
                     resumen = n_body[:400] + ('...' if len(n_body) > 400 else '')
-                    st.write(resumen)
+                    st.markdown(f"<div style='font-size:0.95rem; color:#ddd; line-height:1.5;'>{resumen}</div>", unsafe_allow_html=True)
                 st.markdown("---")
 
     with tab_log:
