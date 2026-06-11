@@ -4,7 +4,8 @@ import logging
 import os
 import subprocess
 import sys
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -29,6 +30,11 @@ from core.html_exporter import export_html
 from extractores.factory import get_extractor
 
 logging.basicConfig(level=logging.INFO)
+
+# Configurar zona horaria de Venezuela
+VNZ_TZ = ZoneInfo("America/Caracas")
+today_date = datetime.now(VNZ_TZ).date()
+
 
 
 CATEGORY_ICONS = {
@@ -228,8 +234,8 @@ with col_title:
         </div>
         <div style="background:#7a1a2e;color:#fff;font-size:.72rem;
                     padding:.2rem .7rem;border-radius:20px;letter-spacing:1px;
-                    margin-top:.4rem;display:inline-block;">
-            HOY: {date.today().strftime('%d / %m / %Y')}
+                    display:inline-block;margin-top:.3rem;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+            HOY: {today_date.strftime("%d / %m / %Y")}
         </div>
     </div>
     """, unsafe_allow_html=True)
