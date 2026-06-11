@@ -221,44 +221,9 @@ with st.sidebar:
     st.markdown("---")
     total_sel = sum(len(v) for v in selected.values())
     st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
-    
-    # ── BOTÓN DE PRENSA DEPORTIVA EN EL SIDEBAR ──
-    st.markdown("---")
-    st.markdown("## 🗞️ Herramientas")
-    
-    paths = [
-        Path("Prensa_Deportiva.html"),
-        Path("Prensa Deportiva/Prensa_Deportiva.html"),
-        Path("Prensa Deportiva/Prensa_Deportiva.html").resolve(),
-        Path("VG_Extractor/Prensa Deportiva/Prensa_Deportiva.html"),
-        Path("../Prensa Deportiva/Prensa_Deportiva.html")
-    ]
-    
-    html_content = None
-    for p in paths:
-        if p.exists():
-            try:
-                html_content = p.read_bytes()
-                break
-            except Exception:
-                pass
-                
-    if html_content:
-        b64_html = base64.b64encode(html_content).decode()
-        st.markdown(
-            f'<a href="data:text/html;base64,{b64_html}" target="_blank" '
-            f'style="display:block; background:linear-gradient(135deg, #7a1a2e, #c0392b); '
-            f'color:white; padding:0.8rem; text-align:center; border-radius:6px; '
-            f'font-family:\'Bebas Neue\',sans-serif; font-size:1.2rem; letter-spacing:2px; '
-            f'text-decoration:none; box-shadow:0 4px 15px rgba(192,57,43,0.4);">'
-            f'🗞️ ABRIR PRENSA DEPORTIVA</a>', 
-            unsafe_allow_html=True
-        )
-    else:
-        st.warning("⚠️ Sube tu archivo Prensa_Deportiva.html para activar el botón.")
 
-# ── BARRA DE TÍTULO + BOTÓN EXTRAER (en el área principal) ───────────────────
-col_title, col_btn = st.columns([4, 1])
+# ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
+col_title, col_btn_prensa, col_btn_extraer = st.columns([3, 1, 1])
 
 with col_title:
     st.markdown(f"""
@@ -275,8 +240,47 @@ with col_title:
     </div>
     """, unsafe_allow_html=True)
 
-with col_btn:
-    # Pequeño espaciado para alinear verticalmente con el título
+# Buscar el HTML para el botón
+paths = [
+    Path("Prensa_Deportiva.html"),
+    Path("Prensa Deportiva/Prensa_Deportiva.html"),
+    Path("Prensa Deportiva/Prensa_Deportiva.html").resolve(),
+    Path("VG_Extractor/Prensa Deportiva/Prensa_Deportiva.html"),
+    Path("../Prensa Deportiva/Prensa_Deportiva.html")
+]
+
+html_content = None
+for p in paths:
+    if p.exists():
+        try:
+            html_content = p.read_bytes()
+            break
+        except Exception:
+            pass
+
+with col_btn_prensa:
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    if html_content:
+        b64_html = base64.b64encode(html_content).decode()
+        st.markdown(
+            f'<a href="data:text/html;base64,{b64_html}" target="_blank" '
+            f'style="display:block; background:#161616; border: 1px solid #2a2a2a; '
+            f'color:#ccc; padding:0.6rem; text-align:center; border-radius:6px; '
+            f'font-family:\'Bebas Neue\',sans-serif; font-size:1.1rem; letter-spacing:1px; '
+            f'text-decoration:none; transition: all 0.2s ease;">'
+            f'🗞️ PRENSA DEPORTIVA</a>', 
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
+            f'color:#666; padding:0.6rem; text-align:center; border-radius:6px; '
+            f'font-family:\'Bebas Neue\',sans-serif; font-size:1.1rem; letter-spacing:1px;">'
+            f'❌ SIN HTML</div>', 
+            unsafe_allow_html=True
+        )
+
+with col_btn_extraer:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     run = st.button("⚡ EXTRAER NOTICIAS", disabled=total_sel == 0, use_container_width=True)
 
