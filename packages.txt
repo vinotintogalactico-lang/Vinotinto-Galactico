@@ -1,6 +1,3 @@
-# Dependencias del sistema para que Playwright/Chromium funcione en Streamlit Cloud
-# Estas son las librerías de Linux que necesita el navegador Chromium
-
 libnss3
 libnspr4
 libatk1.0-0
