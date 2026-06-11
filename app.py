@@ -247,25 +247,9 @@ with st.sidebar:
             url_slug = urlparse(f["url"]).netloc.replace(".", "_")
             path_slug = urlparse(f["url"]).path.strip("/").replace("/", "_")
             chk_key = f"chk_{cat_key}_{url_slug}_{path_slug}_{idx}"
-            fuentes_keys.append((f, chk_key))
+   # ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
+col_title, col_btn_prensa, col_btn_extraer = st.columns([3, 1, 1])
 
-        def toggle_all(tk=todo_key, fk=[k for _, k in fuentes_keys]):
-            val = st.session_state[tk]
-            for key in fk:
-                st.session_state[key] = val
-
-        for f, k in fuentes_keys:
-            if st.checkbox(f["nombre"], key=k):
-                selected.setdefault(cat, []).append(f)
-
-        st.checkbox("🔳 Seleccionar todo", key=todo_key, on_change=toggle_all)
-
-    st.markdown("---")
-    total_sel = sum(len(v) for v in selected.values())
-    st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
-
-# ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
-col_title, col_btn_mundial, col_btn_prensa, col_btn_extraer = st.columns([2, 1, 1, 1])
 with col_title:
     st.markdown(f"""
     <div style="padding:.4rem 0 .2rem 0;">
@@ -360,12 +344,6 @@ with col_btn_prensa:
             unsafe_allow_html=True
         )
 
-with col_btn_mundial:
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-    # Solo habilitar si hay fuentes del Mundial cargadas (aunque sea 1)
-    has_mundial = "Mundial Global" in sources
-    run_mundial = st.button("🏆 MUNDIAL 2026", type="primary", disabled=not has_mundial, use_container_width=True)
-
 with col_btn_extraer:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     run = st.button("⚡ EXTRAER NOTICIAS", type="secondary", disabled=total_sel == 0, use_container_width=True)
@@ -376,20 +354,14 @@ st.markdown("<hr style='border-color:#2a2a2a;margin-top:.5rem;'>", unsafe_allow_
 if "resultado" not in st.session_state:
     st.session_state.resultado = None
 
-if run or run_mundial:
+if run:
     st.session_state.resultado = None
     all_noticias: list[dict] = []
     all_log: list[dict] = []
 
-    if run_mundial:
-        # Extraer única y exclusivamente fuentes del Mundial
-        flat_sources = [("Mundial Global", f) for f in sources.get("Mundial Global", [])]
-        progress = st.progress(0, text="Iniciando extracción MUNDIAL 2026…")
-    else:
-        # Extraer lo que esté marcado en la barra lateral
-        flat_sources = [(cat, f) for cat, fuentes in selected.items() for f in fuentes]
-        progress = st.progress(0, text="Iniciando extracción…")
-
+    # Extraer lo que esté marcado en la barra lateral
+    flat_sources = [(cat, f) for cat, fuentes in selected.items() for f in fuentes]
+    progress = st.progress(0, text="Iniciando extracción…")
     total = len(flat_sources)
     status_box = st.empty()
 
