@@ -51,20 +51,40 @@ def load_sources() -> dict[str, list[dict]]:
                 )
         wb.close()
 
-    # 2. Cargar el Excel del Mundial (Lista de enlaces cruda)
-    mundial_path = Path(__file__).parent.parent / "data" / "Prensa_Mundial_2026_ListaEnlaces.xlsx"
-    if mundial_path.exists():
-        wb_m = load_workbook(mundial_path, data_only=True)
-        ws_m = wb_m.active
-        for row in ws_m.iter_rows(values_only=True):
-            cell = row[0]
-            if not cell: continue
-            value = str(cell).strip()
-            if value.startswith("http"):
-                # Asignar todo a la categoría "Mundial Global"
-                sources.setdefault("Mundial Global", []).append(
-                    {"nombre": _friendly_name(value), "url": value}
-                )
-        wb_m.close()
+    # 2. Cargar el Excel del Mundial de forma dinámica (ignorar mayúsculas/minúsculas)
+    data_dir = Path(__file__).parent.parent / "data"
+    mundial_path = None
+    if data_dir.exists():
+        for file in data_dir.glob("*.xlsx"):
+            fname = file.name.lower()
+            # Si el archivo contiene "mundial" o "enlaces"
+            if "mundial" in fname and "lista" in fname:
+                mundial_path = file
+                break
+                
+        if not mundial_path:
+            # Plan B: buscar cualquier archivo que tenga "mundial" y "enlaces"
+            for file in data_dir.glob("*.*"):
+                fname = file.name.lower()
+                if "mundial" in fname and ("lista" in fname or "enlaces" in fname):
+                    mundial_path = file
+                    break
+
+    if mundial_path and mundial_path.exists():
+        try:
+            wb_m = load_workbook(mundial_path, data_only=True)
+            ws_m = wb_m.active
+            for row in ws_m.iter_rows(values_only=True):
+                cell = row[0]
+                if not cell: continue
+                value = str(cell).strip()
+                if value.startswith("http"):
+                    # Asignar todo a la categoría "Mundial Global"
+                    sources.setdefault("Mundial Global", []).append(
+                        {"nombre": _friendly_name(value), "url": value}
+                    )
+            wb_m.close()
+        except Exception as e:
+            print(f"Error cargando Excel Mundial: {e}")
 
     return sources
