@@ -65,9 +65,11 @@ st.markdown("""
 }
 .vg-banner-wrap img {
     width: 100%;
-    height: auto;
-    max-height: 250px;
-    object-fit: contain;
+    height: 30vw;
+    max-height: 450px;
+    min-height: 200px;
+    object-fit: cover;
+    object-position: center center;
     display: block;
 }
 /* Sombra inferior para que el banner no corte bruscamente */
