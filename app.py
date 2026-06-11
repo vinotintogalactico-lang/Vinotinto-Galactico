@@ -333,7 +333,7 @@ else:
     # Estado vacío — Logo en lugar de la pelota fea
     logo_center = f'<img src="{logo_src}" style="width:100px;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.6);">' if logo_src else '<div style="font-size:4rem;">⚽</div>'
     st.markdown(f"""
-    <div style="text-align:center; padding: 2rem 0 1rem 0; color: #555;">
+    <div style="text-align:center; padding: 4rem 0; color: #555;">
         {logo_center}
         <div style="font-family:'Bebas Neue',sans-serif; font-size:1.6rem;
                     letter-spacing:3px; color:#7a1a2e; margin-top:1rem;">
@@ -344,7 +344,3 @@ else:
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("### 🗞️ Panel de Prensa — Accesos directos")
-    _render_panel_prensa()
