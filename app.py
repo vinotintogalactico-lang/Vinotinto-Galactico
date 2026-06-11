@@ -262,6 +262,7 @@ with col_btn_prensa:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     if html_content:
         import json
+        import streamlit.components.v1 as components
         html_str = html_content.decode('utf-8', errors='replace')
         html_json = json.dumps(html_str)
         
