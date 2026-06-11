@@ -19,7 +19,22 @@ def is_valid_content(title: str, category: str, body: str = "") -> bool:
 
     # ── REGLAS POR CATEGORÍA ─────────────────────────────────────────────────
 
-    if category == "Real Madrid Masculino":
+    if category == "Mundial Global":
+        # Se quiere un enfoque global, sin preferencias, salvo Portugal ("el bicho")
+        # Se incluyen también los principales países/selecciones que participan
+        paises = [
+            "argentina", "brasil", "colombia", "uruguay", "ecuador", "chile", "peru", "venezuela", "bolivia", "paraguay",
+            "méxico", "mexico", "estados unidos", "usa", "canadá", "canada", "costa rica", "panamá", "honduras",
+            "españa", "portugal", "francia", "inglaterra", "alemania", "italia", "países bajos", "holanda", "croacia", "bélgica",
+            "marruecos", "senegal", "japón", "japon", "corea", "arabia"
+        ]
+        must_have = ["mundial", "fifa", "copa del mundo", "world cup", "sede", "estadio", "organización", 
+                     "selección", "seleccion", "cristiano", "ronaldo", "bicho", "cr7"] + paises
+        forbidden = ["fichaje", "mercado", "champions", "traspaso", "premier", "laliga", "nba", "fórmula 1"]
+        if any(f in full_text for f in forbidden): return False
+        if not any(m in full_text for m in must_have): return False
+
+    elif category == "Real Madrid Masculino":
         # Exclusiones explícitas (Femenino, Cantera y Baloncesto)
         # Se escanea TODO el texto (título y cuerpo) buscando palabras que delaten
         # que es una noticia de fútbol femenino o de otra rama.

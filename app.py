@@ -112,7 +112,8 @@ st.markdown("""
 }
 
 /* ─── BOTÓN EXTRAER (ajuste fino para columna derecha) ─── */
-div[data-testid="stButton"] button {
+/* Botón Secundario (Vinotinto) - Extraer Noticias */
+div[data-testid="stButton"] button[kind="secondary"] {
     background: linear-gradient(135deg, #7a1a2e, #c0392b) !important;
     border: none !important;
     border-radius: 6px !important;
@@ -121,7 +122,7 @@ div[data-testid="stButton"] button {
     transition: all 0.2s ease !important;
     padding: 0.6rem 0.5rem !important;
 }
-div[data-testid="stButton"] button p {
+div[data-testid="stButton"] button[kind="secondary"] p {
     color: white !important;
     font-family: 'Bebas Neue', sans-serif !important;
     font-size: 18px !important;
@@ -133,8 +134,35 @@ div[data-testid="stButton"] button p {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
-div[data-testid="stButton"] button:hover {
+div[data-testid="stButton"] button[kind="secondary"]:hover {
     box-shadow: 0 6px 20px rgba(192,57,43,0.7) !important;
+    transform: translateY(-1px);
+}
+
+/* Botón Primario (Verde Mundial) */
+div[data-testid="stButton"] button[kind="primary"] {
+    background: linear-gradient(135deg, #009e4f, #00733a) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    width: 100% !important;
+    box-shadow: 0 4px 15px rgba(0,158,79,0.4) !important;
+    transition: all 0.2s ease !important;
+    padding: 0.6rem 0.5rem !important;
+}
+div[data-testid="stButton"] button[kind="primary"] p {
+    color: white !important;
+    font-family: 'Bebas Neue', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+div[data-testid="stButton"] button[kind="primary"]:hover {
+    box-shadow: 0 6px 20px rgba(0,158,79,0.7) !important;
     transform: translateY(-1px);
 }
 
@@ -237,8 +265,7 @@ with st.sidebar:
     st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
 
 # ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
-col_title, col_btn_prensa, col_btn_extraer = st.columns([3, 1, 1])
-
+col_title, col_btn_mundial, col_btn_prensa, col_btn_extraer = st.columns([2, 1, 1, 1])
 with col_title:
     st.markdown(f"""
     <div style="padding:.4rem 0 .2rem 0;">
@@ -333,9 +360,15 @@ with col_btn_prensa:
             unsafe_allow_html=True
         )
 
+with col_btn_mundial:
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    # Solo habilitar si hay fuentes del Mundial cargadas (aunque sea 1)
+    has_mundial = "Mundial Global" in sources
+    run_mundial = st.button("🏆 MUNDIAL 2026", type="primary", disabled=not has_mundial, use_container_width=True)
+
 with col_btn_extraer:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-    run = st.button("⚡ EXTRAER NOTICIAS", disabled=total_sel == 0, use_container_width=True)
+    run = st.button("⚡ EXTRAER NOTICIAS", type="secondary", disabled=total_sel == 0, use_container_width=True)
 
 st.markdown("<hr style='border-color:#2a2a2a;margin-top:.5rem;'>", unsafe_allow_html=True)
 
@@ -343,16 +376,22 @@ st.markdown("<hr style='border-color:#2a2a2a;margin-top:.5rem;'>", unsafe_allow_
 if "resultado" not in st.session_state:
     st.session_state.resultado = None
 
-if run:
+if run or run_mundial:
     st.session_state.resultado = None
     all_noticias: list[dict] = []
     all_log: list[dict] = []
 
-    progress = st.progress(0, text="Iniciando extracción…")
-    status_box = st.empty()
+    if run_mundial:
+        # Extraer única y exclusivamente fuentes del Mundial
+        flat_sources = [("Mundial Global", f) for f in sources.get("Mundial Global", [])]
+        progress = st.progress(0, text="Iniciando extracción MUNDIAL 2026…")
+    else:
+        # Extraer lo que esté marcado en la barra lateral
+        flat_sources = [(cat, f) for cat, fuentes in selected.items() for f in fuentes]
+        progress = st.progress(0, text="Iniciando extracción…")
 
-    flat_sources = [(cat, f) for cat, fuentes in selected.items() for f in fuentes]
     total = len(flat_sources)
+    status_box = st.empty()
 
     async def run_all():
         for i, (cat, f) in enumerate(flat_sources):
