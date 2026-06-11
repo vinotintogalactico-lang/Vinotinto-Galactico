@@ -261,16 +261,39 @@ for p in paths:
 with col_btn_prensa:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     if html_content:
-        b64_html = base64.b64encode(html_content).decode()
-        st.markdown(
-            f'<a href="data:text/html;base64,{b64_html}" target="_blank" '
-            f'style="display:block; background:#161616; border: 1px solid #2a2a2a; '
-            f'color:#ccc; padding:0.6rem; text-align:center; border-radius:6px; '
-            f'font-family:\'Bebas Neue\',sans-serif; font-size:1.1rem; letter-spacing:1px; '
-            f'text-decoration:none; transition: all 0.2s ease;">'
-            f'🗞️ PRENSA DEPORTIVA</a>', 
-            unsafe_allow_html=True
-        )
+        import json
+        html_str = html_content.decode('utf-8', errors='replace')
+        html_json = json.dumps(html_str)
+        
+        button_html = f"""
+        <style>
+        body {{ margin: 0; padding: 0; font-family: 'Bebas Neue', sans-serif; background: transparent; }}
+        button {{
+            background: linear-gradient(135deg, #7a1a2e, #c0392b);
+            color: white; border: none; padding: 0.6rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
+            letter-spacing: 2px; border-radius: 6px; cursor: pointer;
+            width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
+            transition: all 0.2s ease;
+        }}
+        button:hover {{ box-shadow: 0 6px 20px rgba(192,57,43,0.7); transform: translateY(-1px); }}
+        </style>
+        <button onclick='openPanel()'>🗞️ PRENSA DEPORTIVA</button>
+        <script>
+        function openPanel() {{
+            var content = {html_json};
+            var newWin = window.open("", "_blank");
+            if (newWin) {{
+                newWin.document.open();
+                newWin.document.write(content);
+                newWin.document.close();
+            }} else {{
+                alert("Por favor habilita las ventanas emergentes (pop-ups) para ver la prensa.");
+            }}
+        }}
+        </script>
+        """
+        components.html(button_html, height=50)
     else:
         st.markdown(
             f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
