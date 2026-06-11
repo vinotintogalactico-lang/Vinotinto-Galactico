@@ -271,16 +271,18 @@ with col_btn_prensa:
         button_html = f"""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; }}
+        body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100%; }}
         button {{
             background: linear-gradient(135deg, #7a1a2e, #c0392b);
-            color: white; border: none; padding: .65rem 1rem;
+            color: white; border: none; padding: .75rem 1.5rem;
             font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
             letter-spacing: 3px; border-radius: 6px; cursor: pointer;
             width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
             transition: all 0.2s ease;
             box-sizing: border-box;
             text-transform: uppercase;
+            margin: 0;
+            line-height: normal;
         }}
         button:hover {{ box-shadow: 0 6px 20px rgba(192,57,43,0.7); transform: translateY(-1px); }}
         </style>
@@ -299,7 +301,7 @@ with col_btn_prensa:
         }}
         </script>
         """
-        components.html(button_html, height=80)
+        components.html(button_html, height=55)
     else:
         st.markdown(
             f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
