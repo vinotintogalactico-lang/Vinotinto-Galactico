@@ -65,9 +65,9 @@ st.markdown("""
 }
 .vg-banner-wrap img {
     width: 100%;
-    height: 30vw;
-    max-height: 450px;
-    min-height: 200px;
+    height: 25vw;
+    max-height: 300px;
+    min-height: 180px;
     object-fit: cover;
     object-position: center center;
     display: block;
@@ -301,7 +301,7 @@ with col_btn_prensa:
         }}
         </script>
         """
-        components.html(button_html, height=55)
+        components.html(button_html, height=75)
     else:
         st.markdown(
             f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
