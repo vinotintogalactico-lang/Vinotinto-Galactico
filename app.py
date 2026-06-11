@@ -57,7 +57,8 @@ st.markdown("""
 
 /* ─── BANNER (ocupa todo el ancho del área principal) ─── */
 .vg-banner-wrap {
-    margin: -1rem -1rem 0 -1rem;
+    margin: -1rem auto 0 auto;
+    max-width: 1080px;
     position: relative;
     background: #0d0d0d;
     display: flex;
@@ -113,13 +114,24 @@ st.markdown("""
 /* ─── BOTÓN EXTRAER (ajuste fino para columna derecha) ─── */
 div[data-testid="stButton"] button {
     background: linear-gradient(135deg, #7a1a2e, #c0392b) !important;
-    color: white !important; border: none !important;
-    font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 1.2rem !important; letter-spacing: 3px !important;
-    padding: .75rem 1.5rem !important; border-radius: 6px !important;
+    border: none !important;
+    border-radius: 6px !important;
     width: 100% !important;
     box-shadow: 0 4px 15px rgba(192,57,43,0.4) !important;
     transition: all 0.2s ease !important;
+    padding: 0.6rem 0.5rem !important;
+}
+div[data-testid="stButton"] button p {
+    color: white !important;
+    font-family: 'Bebas Neue', sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 div[data-testid="stButton"] button:hover {
     box-shadow: 0 6px 20px rgba(192,57,43,0.7) !important;
@@ -274,15 +286,25 @@ with col_btn_prensa:
         body {{ margin: 0; padding: 0; background: transparent; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100%; }}
         button {{
             background: linear-gradient(135deg, #7a1a2e, #c0392b);
-            color: white; border: none; padding: .75rem 1.5rem;
-            font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
-            letter-spacing: 3px; border-radius: 6px; cursor: pointer;
-            width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
+            color: white; 
+            border: none; 
+            padding: 0.6rem 0.5rem;
+            margin: 0;
+            font-family: 'Bebas Neue', sans-serif; 
+            font-size: 18px; 
+            font-weight: 400;
+            letter-spacing: 2px; 
+            border-radius: 6px; 
+            cursor: pointer;
+            width: 100%; 
+            height: 100%;
+            box-shadow: 0 4px 15px rgba(192,57,43,0.4);
             transition: all 0.2s ease;
             box-sizing: border-box;
             text-transform: uppercase;
-            margin: 0;
-            line-height: normal;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }}
         button:hover {{ box-shadow: 0 6px 20px rgba(192,57,43,0.7); transform: translateY(-1px); }}
         </style>
