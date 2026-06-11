@@ -1,11 +1,17 @@
+import os
+import time
+
+# Forzar zona horaria de Venezuela para todo el servidor (solo afecta Linux/Streamlit)
+os.environ['TZ'] = 'America/Caracas'
+if hasattr(time, 'tzset'):
+    time.tzset()
+
 import asyncio
 import base64
 import logging
-import os
 import subprocess
 import sys
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, date
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -30,12 +36,6 @@ from core.html_exporter import export_html
 from extractores.factory import get_extractor
 
 logging.basicConfig(level=logging.INFO)
-
-# Configurar zona horaria de Venezuela
-VNZ_TZ = ZoneInfo("America/Caracas")
-today_date = datetime.now(VNZ_TZ).date()
-
-
 
 CATEGORY_ICONS = {
     "Real Madrid Masculino":      "👑",
@@ -235,7 +235,7 @@ with col_title:
         <div style="background:#7a1a2e;color:#fff;font-size:.72rem;
                     padding:.2rem .7rem;border-radius:20px;letter-spacing:1px;
                     display:inline-block;margin-top:.3rem;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
-            HOY: {today_date.strftime("%d / %m / %Y")}
+            HOY: {date.today().strftime("%d / %m / %Y")}
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -310,11 +310,10 @@ if st.session_state.resultado:
                              file_name="noticias.html", mime="text/html")
 
     st.markdown("---")
-    tab_news, tab_log, tab_prensa = st.tabs([f"📰 Noticias ({len(noticias)})", "📋 Informe de control", "🗞️ Panel de Prensa"])
+    tab_news, tab_log = st.tabs([f"📰 Noticias ({len(noticias)})", "📋 Informe de control"])
 
     with tab_news:
         if not noticias:
-            st.warning("No se encontraron noticias del día en las fuentes seleccionadas.")
             st.info("No se encontraron noticias con los filtros actuales en las fuentes seleccionadas.")
         for n in noticias:
             with st.container():
