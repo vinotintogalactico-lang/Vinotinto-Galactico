@@ -58,17 +58,16 @@ st.markdown("""
 /* ─── BANNER (ocupa todo el ancho del área principal) ─── */
 .vg-banner-wrap {
     margin: -1rem -1rem 0 -1rem;
-    overflow: hidden;
-    max-height: 260px;
     position: relative;
     background: #0d0d0d;
+    display: flex;
+    justify-content: center;
 }
 .vg-banner-wrap img {
     width: 100%;
+    height: auto;
+    object-fit: contain;
     display: block;
-    object-fit: cover;
-    object-position: center center;
-    max-height: 260px;
 }
 /* Sombra inferior para que el banner no corte bruscamente */
 .vg-banner-wrap::after {
@@ -271,12 +270,13 @@ with col_btn_prensa:
         body {{ margin: 0; padding: 0; font-family: 'Bebas Neue', sans-serif; background: transparent; overflow: hidden; }}
         button {{
             background: linear-gradient(135deg, #7a1a2e, #c0392b);
-            color: white; border: none; padding: 0.5rem;
-            font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem;
-            letter-spacing: 1px; border-radius: 6px; cursor: pointer;
+            color: white; border: none; padding: .75rem 1.5rem;
+            font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem;
+            letter-spacing: 3px; border-radius: 6px; cursor: pointer;
             width: 100%; box-shadow: 0 4px 15px rgba(192,57,43,0.4);
             transition: all 0.2s ease;
             box-sizing: border-box;
+            text-transform: uppercase;
         }}
         button:hover {{ box-shadow: 0 6px 20px rgba(192,57,43,0.7); transform: translateY(-1px); }}
         </style>
@@ -295,7 +295,7 @@ with col_btn_prensa:
         }}
         </script>
         """
-        components.html(button_html, height=65)
+        components.html(button_html, height=80)
     else:
         st.markdown(
             f'<div style="display:block; background:#161616; border: 1px solid #2a2a2a; '
@@ -416,14 +416,13 @@ if st.session_state.resultado:
                 n_author = n.get("author", "")
                 n_body = n.get("body", "")
                 
-                st.markdown(f"##### [{n_title}]({n_url})")
-                
                 cols = st.columns([1, 4])
                 if n_imagen:
                     cols[0].image(n_imagen, use_container_width=True)
                 
                 with cols[1]:
-                    st.markdown(f"<div style='color:#c0392b; font-size:0.95rem; font-weight:600; margin-bottom:0.4rem; font-family:sans-serif;'>📌 Fuente: {n_fuente} &nbsp;|&nbsp; Categoría: {n_categoria} &nbsp;|&nbsp; Fecha: {n_date} &nbsp;|&nbsp; Autor: {n_author}</div>", unsafe_allow_html=True)
+                    st.markdown(f"#### [{n_title}]({n_url})")
+                    st.markdown(f"<div style='color:#c0392b; font-size:1.05rem; font-weight:600; margin-bottom:0.4rem; font-family:sans-serif;'>📌 Fuente: {n_fuente} &nbsp;|&nbsp; Categoría: {n_categoria} &nbsp;|&nbsp; Fecha: {n_date} &nbsp;|&nbsp; Autor: {n_author}</div>", unsafe_allow_html=True)
                     resumen = n_body[:400] + ('...' if len(n_body) > 400 else '')
                     st.markdown(f"<div style='font-size:0.95rem; color:#ddd; line-height:1.5;'>{resumen}</div>", unsafe_allow_html=True)
                 st.markdown("---")
