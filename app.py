@@ -247,7 +247,24 @@ with st.sidebar:
             url_slug = urlparse(f["url"]).netloc.replace(".", "_")
             path_slug = urlparse(f["url"]).path.strip("/").replace("/", "_")
             chk_key = f"chk_{cat_key}_{url_slug}_{path_slug}_{idx}"
-   # ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
+            fuentes_keys.append((f, chk_key))
+
+        def toggle_all(tk=todo_key, fk=[k for _, k in fuentes_keys]):
+            val = st.session_state[tk]
+            for key in fk:
+                st.session_state[key] = val
+
+        for f, k in fuentes_keys:
+            if st.checkbox(f["nombre"], key=k):
+                selected.setdefault(cat, []).append(f)
+
+        st.checkbox("🔳 Seleccionar todo", key=todo_key, on_change=toggle_all)
+
+    st.markdown("---")
+    total_sel = sum(len(v) for v in selected.values())
+    st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
+
+# ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
 col_title, col_btn_prensa, col_btn_extraer = st.columns([3, 1, 1])
 
 with col_title:
