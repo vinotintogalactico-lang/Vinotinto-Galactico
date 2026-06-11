@@ -18,6 +18,9 @@ _MESES_EN = {
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
 
+from zoneinfo import ZoneInfo
+VNZ_TZ = ZoneInfo("America/Caracas")
+
 def is_today(date_str: str) -> tuple[bool, str]:
     """
     Validación de fecha ESTRICTA: SOLO Hoy y Ayer (por desfase horario España-América).
@@ -26,11 +29,11 @@ def is_today(date_str: str) -> tuple[bool, str]:
     if not date_str:
         return False, "Fecha vacía (Rechazada)"
 
-    today = date.today()
+    today = datetime.now(VNZ_TZ).date()
     from datetime import timedelta
     tomorrow = today + timedelta(days=1)
     
-    parsed = _parse_date(date_str.strip())
+    parsed = _parse_date(date_str.strip(), today)
 
     if parsed is None:
         return False, f"No se pudo parsear: '{date_str}' (Rechazada)"
@@ -41,7 +44,7 @@ def is_today(date_str: str) -> tuple[bool, str]:
         return False, f"Rechazado: {parsed} no es de Hoy ni de Mañana"
 
 
-def _parse_date(text: str) -> date | None:
+def _parse_date(text: str, today: date) -> date | None:
     """Intenta parsear una cadena de fecha en varios formatos."""
     text = text.strip()
 
@@ -68,11 +71,11 @@ def _parse_date(text: str) -> date | None:
 
     # 3. "hace X minutos/horas/segundos" → hoy
     if re.search(r"hace\s+\d+\s+(minuto|hora|segundo)", text, re.I):
-        return date.today()
+        return today
     if re.search(r"\d+\s*(min|hour|ago|h ago|m ago)", text, re.I):
-        return date.today()
+        return today
     if re.search(r"just now|ahora mismo|hace un momento|ahora", text, re.I):
-        return date.today()
+        return today
 
     # 4. Texto con mes en español/inglés: "7 de junio de 2025" o "7 junio 2025"
     text_lower = text.lower()
@@ -109,10 +112,9 @@ def _parse_date(text: str) -> date | None:
         try:
             from dateutil import parser
             dt = parser.parse(text, fuzzy=True, dayfirst=True).date()
-            hoy = date.today()
             from datetime import timedelta
-            manana = hoy + timedelta(days=1)
-            if dt == hoy or dt == manana:
+            manana = today + timedelta(days=1)
+            if dt == today or dt == manana:
                 return dt
             else:
                 return None

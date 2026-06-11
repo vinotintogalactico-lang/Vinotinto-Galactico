@@ -6,6 +6,8 @@ sobrescriben métodos cuando la estructura del sitio lo requiere.
 from __future__ import annotations
 import asyncio
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from core.article_parser import parse_article
 from core.date_validator import is_today

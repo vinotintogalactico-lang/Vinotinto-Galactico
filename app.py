@@ -309,7 +309,7 @@ def _render_panel_prensa():
     if html_content:
         components.html(html_content, height=800, scrolling=True)
     else:
-        st.error("No se encontró el archivo Prensa_Deportiva.html en el repositorio. Por favor, asegúrate de haberlo subido.")
+        st.error("No se encontró el archivo Prensa_Deportiva.html. Por favor, asegúrate de haberlo subido a GitHub junto con los demás archivos.")
 
 if st.session_state.resultado:
     res = st.session_state.resultado
@@ -343,15 +343,24 @@ if st.session_state.resultado:
             st.info("No se encontraron noticias con los filtros actuales en las fuentes seleccionadas.")
         for n in noticias:
             with st.container():
-                st.markdown(f"#### [{n.get('title', 'Sin título')}](<{n.get('url', '#'>)})")
+                n_title = n.get("title", "Sin título")
+                n_url = n.get("url", "#")
+                n_imagen = n.get("imagen")
+                n_fuente = n.get("fuente", "")
+                n_categoria = n.get("categoria", "")
+                n_date = n.get("date", "")
+                n_author = n.get("author", "")
+                n_body = n.get("body", "")
+                
+                st.markdown(f"#### [{n_title}]({n_url})")
                 
                 cols = st.columns([1, 4])
-                if n.get("imagen"):
-                    cols[0].image(n["imagen"], use_container_width=True)
+                if n_imagen:
+                    cols[0].image(n_imagen, use_container_width=True)
                 
                 with cols[1]:
-                    st.caption(f"**Fuente:** {n.get('fuente', '')} · **Categoría:** {n.get('categoria', '')} · **Fecha:** {n.get('date', '')} · **Autor:** {n.get('author', '')}")
-                    resumen = n.get('body', '')[:400] + ('...' if len(n.get('body', '')) > 400 else '')
+                    st.caption(f"**Fuente:** {n_fuente} · **Categoría:** {n_categoria} · **Fecha:** {n_date} · **Autor:** {n_author}")
+                    resumen = n_body[:400] + ('...' if len(n_body) > 400 else '')
                     st.write(resumen)
                 st.markdown("---")
 
