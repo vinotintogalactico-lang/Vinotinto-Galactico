@@ -286,6 +286,31 @@ if run:
     }
 
 # ── RESULTADOS ────────────────────────────────────────────────────────────────
+import streamlit.components.v1 as components
+
+def _render_panel_prensa():
+    paths = [
+        Path("Prensa_Deportiva.html"),
+        Path("Prensa Deportiva/Prensa_Deportiva.html"),
+        Path("Prensa Deportiva/Prensa_Deportiva.html").resolve(),
+        Path("VG_Extractor/Prensa Deportiva/Prensa_Deportiva.html"),
+        Path("../Prensa Deportiva/Prensa_Deportiva.html")
+    ]
+    
+    html_content = None
+    for p in paths:
+        if p.exists():
+            try:
+                html_content = p.read_text(encoding="utf-8")
+                break
+            except Exception:
+                pass
+                
+    if html_content:
+        components.html(html_content, height=800, scrolling=True)
+    else:
+        st.error("No se encontró el archivo Prensa_Deportiva.html en el repositorio. Por favor, asegúrate de haberlo subido.")
+
 if st.session_state.resultado:
     res = st.session_state.resultado
     noticias = res["noticias"]
@@ -310,22 +335,24 @@ if st.session_state.resultado:
                              file_name="noticias.html", mime="text/html")
 
     st.markdown("---")
-    tab_news, tab_log = st.tabs([f"📰 Noticias ({len(noticias)})", "📋 Informe de control"])
+    tab_news, tab_log, tab_prensa = st.tabs([f"📰 Noticias ({len(noticias)})", "📋 Informe de control", "🗞️ Panel de Prensa"])
 
     with tab_news:
         if not noticias:
+            st.warning("No se encontraron noticias del día en las fuentes seleccionadas.")
             st.info("No se encontraron noticias con los filtros actuales en las fuentes seleccionadas.")
         for n in noticias:
             with st.container():
-                st.markdown(f"#### [{n['titulo']}]({n['link']})")
+                st.markdown(f"#### [{n.get('title', 'Sin título')}](<{n.get('url', '#'>)})")
                 
                 cols = st.columns([1, 4])
                 if n.get("imagen"):
                     cols[0].image(n["imagen"], use_container_width=True)
                 
                 with cols[1]:
-                    st.caption(f"**Fuente:** {n['fuente']} · **Categoría:** {n['categoria']} · **Fecha:** {n['fecha']} · **Autor:** {n['autor']}")
-                    st.write(n["resumen"])
+                    st.caption(f"**Fuente:** {n.get('fuente', '')} · **Categoría:** {n.get('categoria', '')} · **Fecha:** {n.get('date', '')} · **Autor:** {n.get('author', '')}")
+                    resumen = n.get('body', '')[:400] + ('...' if len(n.get('body', '')) > 400 else '')
+                    st.write(resumen)
                 st.markdown("---")
 
     with tab_log:
@@ -333,6 +360,9 @@ if st.session_state.resultado:
             icon = "✅" if entry["estado"] == "Correcto" else ("⚠️" if "sin" in entry["estado"].lower() else "❌")
             err = f" — `{entry['error']}`" if entry.get("error") else ""
             st.markdown(f"{icon} **{entry['fuente']}** · Encontradas: `{entry['encontradas']}` · Extraídas: `{entry['extraidas']}` · {entry['estado']}{err}")
+
+    with tab_prensa:
+        _render_panel_prensa()
 
 else:
     # Estado vacío — Logo en lugar de la pelota fea
