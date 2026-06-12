@@ -125,9 +125,9 @@ div[data-testid="stButton"] button[kind="secondary"] {
 div[data-testid="stButton"] button[kind="secondary"] p {
     color: white !important;
     font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: 400 !important;
-    letter-spacing: 2px !important;
+    letter-spacing: 1px !important;
     text-transform: uppercase !important;
     margin: 0 !important;
     white-space: nowrap !important;
@@ -152,9 +152,9 @@ div[data-testid="stButton"] button[kind="primary"] {
 div[data-testid="stButton"] button[kind="primary"] p {
     color: white !important;
     font-family: 'Bebas Neue', sans-serif !important;
-    font-size: 18px !important;
+    font-size: 16px !important;
     font-weight: 400 !important;
-    letter-spacing: 2px !important;
+    letter-spacing: 1px !important;
     text-transform: uppercase !important;
     margin: 0 !important;
     white-space: nowrap !important;
@@ -265,7 +265,7 @@ with st.sidebar:
     st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
 
 # ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
-col_title, col_btn_mundial, col_btn_prensa, col_btn_extraer = st.columns([2.5, 1, 1, 1])
+col_title, col_btn_mundial, col_btn_prensa, col_btn_extraer = st.columns([1.5, 0.9, 1.2, 1.2])
 
 with col_title:
     st.markdown(f"""
@@ -303,7 +303,7 @@ for p in paths:
 with col_btn_mundial:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
     if st.button("🏆 MUNDIAL 2026", type="primary", use_container_width=True):
-        st.switch_page("pages/2_🏆_Mundial_2026.py")
+        st.switch_page("pages/2_Mundial_2026.py")
 
 with col_btn_prensa:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
@@ -324,9 +324,9 @@ with col_btn_prensa:
             padding: 0.6rem 0.5rem;
             margin: 0;
             font-family: 'Bebas Neue', sans-serif; 
-            font-size: 18px; 
+            font-size: 16px; 
             font-weight: 400;
-            letter-spacing: 2px; 
+            letter-spacing: 1px; 
             border-radius: 6px; 
             cursor: pointer;
             width: 100%; 
