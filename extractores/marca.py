@@ -78,23 +78,21 @@ class MarcaExtractor(GenericExtractor):
         return []
 
     async def _extract_article(self, context, url: str) -> dict | None:
-        page = await context.new_page()
         try:
             from core.article_parser import parse_article
+            import requests
+            import asyncio
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept-Language": "es-ES,es;q=0.9",
+            }
+            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
+            if resp.status_code != 200:
+                return None
+                
+            html = resp.text
             from bs4 import BeautifulSoup
-
-            await page.goto(url, timeout=20_000, wait_until="domcontentloaded")
-            await page.wait_for_timeout(1500)
-
-            try:
-                btn = page.locator("#didomi-notice-agree-button")
-                if await btn.is_visible(timeout=1000):
-                    await btn.click()
-                    await page.wait_for_timeout(1000)
-            except Exception:
-                pass
-
-            html = await page.content()
             soup = BeautifulSoup(html, "html.parser")
 
             title = soup.find("h1")
@@ -120,5 +118,3 @@ class MarcaExtractor(GenericExtractor):
             return art if art.get("title") else None
         except Exception:
             return None
-        finally:
-            await page.close()

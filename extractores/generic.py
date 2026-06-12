@@ -30,6 +30,7 @@ CHROMIUM_ARGS = [
     "--disable-gpu",
     "--disable-setuid-sandbox",
     "--disable-software-rasterizer",
+    "--js-flags=--max-old-space-size=256"
 ]
 
 
@@ -74,17 +75,18 @@ class GenericExtractor:
                     ignore_https_errors=True,
                 )
 
-                # Bloqueo de recursos SOLO para el Mundial — nunca para el extractor principal
-                if self.categoria == "Mundial Global":
-                    async def route_intercept(route):
-                        req = route.request
-                        if req.resource_type in ["image", "media", "font"]:
-                            await route.abort()
-                        elif any(ad in req.url for ad in ["googleads", "doubleclick", "taboola", "outbrain"]):
-                            await route.abort()
-                        else:
-                            await route.continue_()
-                    await context.route("**/*", route_intercept)
+                # Bloqueo de recursos pesados para EVITAR que Streamlit Cloud se quede sin RAM
+                async def route_intercept(route):
+                    req = route.request
+                    # Bloqueamos estrictamente videos y anuncios problemáticos
+                    if req.resource_type == "media":
+                        await route.abort()
+                    elif any(ad in req.url for ad in ["googleads", "doubleclick", "taboola", "outbrain", "criteo", "teads"]):
+                        await route.abort()
+                    else:
+                        await route.continue_()
+                
+                await context.route("**/*", route_intercept)
 
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
@@ -173,40 +175,48 @@ class GenericExtractor:
 
     # ── Extracción de artículo individual ───────────────────────────────────
     async def _extract_article(self, context: BrowserContext, url: str) -> dict | None:
-        page: Page = await context.new_page()
         try:
-            await page.goto(url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
-            await page.wait_for_timeout(1500)
+            from core.article_parser import parse_article
+            import requests
+            import asyncio
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "es-ES,es;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+            
+            # Usar requests en un hilo para NO consumir memoria de Chromium
+            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
+            if resp.status_code != 200:
+                return None
+            
+            html = resp.text
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, "html.parser")
 
-            # Intentar aceptar cookies si hay un popup bloqueando
-            try:
-                btn = page.locator(
-                    "#didomi-notice-agree-button, .didomi-continue-without-agreeing, "
-                    ".cmplz-accept, #onetrust-accept-btn-handler"
-                )
-                if await btn.first.is_visible(timeout=800):
-                    await btn.first.click()
-                    await page.wait_for_timeout(1000)
-            except Exception:
-                pass
+            title = soup.find("h1")
+            title_text = title.get_text(strip=True) if title else ""
 
-            html = await page.content()
+            subtitle = soup.select_one("h2, .subtitle, .standfirst")
+            subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
 
-            # Intentar extraer fecha del atributo datetime antes de pasar el HTML
-            from bs4 import BeautifulSoup as _BS
-            _soup = _BS(html, "html.parser")
+            author = soup.select_one(".author, [rel='author']")
+            author_text = author.get_text(strip=True) if author else ""
+
             date_text = ""
-            _time = _soup.select_one("time[datetime]")
-            if _time and _time.get("datetime"):
-                date_text = _time["datetime"]
+            time_el = soup.select_one("time[datetime]")
+            if time_el and time_el.get("datetime"):
+                date_text = time_el["datetime"]
+            else:
+                date_fallback = soup.select_one("time, .date")
+                date_text = date_fallback.get_text(strip=True) if date_fallback else ""
 
-            art = parse_article(html, url, date=date_text)
+            art = parse_article(html, url, title=title_text, subtitle=subtitle_text,
+                                author=author_text, date=date_text)
             return art if art.get("title") else None
-        except Exception as exc:
-            logger.warning("No se pudo abrir %s: %s", url, exc)
+        except Exception:
             return None
-        finally:
-            await page.close()
 
 
     # ── Utilidades ───────────────────────────────────────────────────────────

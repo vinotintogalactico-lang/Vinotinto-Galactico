@@ -10,6 +10,47 @@ from extractores.generic import GenericExtractor
 
 class SportExtractor(GenericExtractor):
 
+    async def _extract_article(self, context, url: str) -> dict | None:
+        try:
+            from core.article_parser import parse_article
+            import requests
+            import asyncio
+            
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept-Language": "es-ES,es;q=0.9",
+            }
+            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
+            if resp.status_code != 200:
+                return None
+                
+            html = resp.text
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, "html.parser")
+
+            title = soup.find("h1")
+            title_text = title.get_text(strip=True) if title else ""
+
+            subtitle = soup.select_one("h2.ft-c-article__subtitle, h2.subtitle, h2")
+            subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
+
+            author = soup.select_one(".ft-c-article__author-name, .author, [rel='author']")
+            author_text = author.get_text(strip=True) if author else ""
+
+            date_text = ""
+            time_el = soup.select_one("time[datetime]")
+            if time_el and time_el.get("datetime"):
+                date_text = time_el["datetime"]
+            else:
+                date_fallback = soup.select_one("time, .ft-c-article__date")
+                date_text = date_fallback.get_text(strip=True) if date_fallback else ""
+
+            art = parse_article(html, url, title=title_text, subtitle=subtitle_text,
+                                author=author_text, date=date_text)
+            return art if art.get("title") else None
+        except Exception:
+            return None
+
     async def _get_article_links(self, page: Page) -> list[str]:
         seen: set[str] = set()
         links: list[str] = []
