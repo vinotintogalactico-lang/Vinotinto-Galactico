@@ -648,20 +648,35 @@ elif st.session_state.current_page == 'mundial':
         selected = []
         fuentes_list = sources_dict["Mundial Global"]
 
-        # 1. Seleccionar todo
-        todo_key = "wc_todo"
-        def toggle_all():
-            val = st.session_state[todo_key]
-            for idx in range(len(fuentes_list)):
-                st.session_state[f"wc_chk_{idx}"] = val
+        def toggle_block(block_id, start_idx, end_idx):
+            val = st.session_state[f"wc_todo_block_{block_id}"]
+            for i in range(start_idx, end_idx):
+                st.session_state[f"wc_chk_{i}"] = val
 
-        st.checkbox("🔳 SELECCIONAR TODO", key=todo_key, on_change=toggle_all)
-        st.markdown("<hr style='margin: 0.5rem 0; border-color:#2a2a2a;'>", unsafe_allow_html=True)
+        block_size = 10
+        num_blocks = (len(fuentes_list) + block_size - 1) // block_size
 
-        # 2. Lista de fuentes
-        for idx, f in enumerate(fuentes_list):
-            if st.checkbox(f["nombre"], key=f"wc_chk_{idx}"):
-                selected.append(f)
+        for b in range(num_blocks):
+            start = b * block_size
+            end = min(start + block_size, len(fuentes_list))
+            
+            # Nombre del bloque (A, B, C...)
+            block_letter = chr(65 + b)
+            st.markdown(f"**Bloque {block_letter} ({start+1} - {end})**")
+            
+            # Checkbox para seleccionar todo el bloque
+            st.checkbox(f"🔳 Seleccionar todas", 
+                        key=f"wc_todo_block_{b}", 
+                        on_change=toggle_block, 
+                        args=(b, start, end))
+            
+            for idx in range(start, end):
+                f = fuentes_list[idx]
+                if st.checkbox(f["nombre"], key=f"wc_chk_{idx}"):
+                    selected.append(f)
+            
+            if b < num_blocks - 1:
+                st.markdown("<hr style='margin: 0.5rem 0; border-color:#2a2a2a;'>", unsafe_allow_html=True)
 
         st.markdown("---")
         st.caption(f"**{len(selected)}** fuente(s) seleccionada(s)")
