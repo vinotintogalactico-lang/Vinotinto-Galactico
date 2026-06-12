@@ -265,7 +265,7 @@ with st.sidebar:
     st.caption(f"**{total_sel}** fuente(s) seleccionada(s)")
 
 # ── BARRA DE TÍTULO + BOTONES (en el área principal) ───────────────────
-col_title, col_btn_prensa, col_btn_extraer = st.columns([3, 1, 1])
+col_title, col_btn_mundial, col_btn_prensa, col_btn_extraer = st.columns([2.5, 1, 1, 1])
 
 with col_title:
     st.markdown(f"""
@@ -299,6 +299,11 @@ for p in paths:
             break
         except Exception:
             pass
+
+with col_btn_mundial:
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    if st.button("🏆 MUNDIAL 2026", type="primary", use_container_width=True):
+        st.switch_page("pages/2_🏆_Mundial_2026.py")
 
 with col_btn_prensa:
     st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
