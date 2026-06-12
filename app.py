@@ -629,7 +629,7 @@ elif st.session_state.current_page == 'mundial':
     </style>
     """, unsafe_allow_html=True)
 
-    LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/thumb/4/4b/2026_FIFA_World_Cup_logo.svg/1200px-2026_FIFA_World_Cup_logo.svg.png"
+    LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/4/4b/2026_FIFA_World_Cup_logo.svg"
 
     st.markdown(f"""
     <div class="wc-hero">
@@ -666,14 +666,15 @@ elif st.session_state.current_page == 'mundial':
         st.markdown("---")
         st.caption(f"**{len(selected)}** fuente(s) seleccionada(s)")
 
-        # Enlace para volver a la app principal
-        if st.button("← VOLVER A PRENSA DEPORTIVA", key="back_btn"):
-            st.session_state.current_page = "main"; st.rerun()
 
-    # ── BOTÓN EXTRAER ─────────────────────────────────────────────────────────────
-    col_info, col_btn = st.columns([3, 1])
+    # ── BARRA DE BOTONES ──────────────────────────────────────────────────────────
+    col_info, col_volver, col_btn = st.columns([2.5, 1, 1])
     with col_info:
         st.markdown('<p style="color:#888; font-size:.9rem; margin-top:.5rem;">Selecciona las fuentes en el panel izquierdo y extrae las noticias globales del Mundial 2026.</p>', unsafe_allow_html=True)
+    with col_volver:
+        if st.button("⬅️ VOLVER", key="back_btn_top", use_container_width=True):
+            st.session_state.current_page = "main"
+            st.rerun()
     with col_btn:
         run = st.button("⚡ EXTRAER NOTICIAS", disabled=len(selected) == 0, use_container_width=True)
 
@@ -741,13 +742,29 @@ elif st.session_state.current_page == 'mundial':
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        # ── Visor de resultados integrados igual que app.py ──
-        for i, n in enumerate(noticias, 1):
-            st.markdown(f"#### [{n.get('title', 'Sin título')}]({n.get('url', '#')})")
-            st.markdown(f"<div style='color:#00ff85; font-size:1.05rem;'>📌 Fuente: {n.get('fuente','')} | 📅 {n.get('date','')}</div>", unsafe_allow_html=True)
-            resumen = n.get("body", "")[:400] + ('...' if len(n.get("body", "")) > 400 else '')
-            st.markdown(f"<div style='color:#ddd;'>{resumen}</div>", unsafe_allow_html=True)
-            st.markdown("---")
+        tab_news, tab_log = st.tabs([f"📰 Noticias ({len(noticias)})", "📋 Informe de control"])
+
+        with tab_news:
+            if not noticias:
+                st.warning("No se encontraron noticias del día en las fuentes seleccionadas.")
+            for n in noticias:
+                st.markdown(f"#### [{n.get('title', 'Sin título')}]({n.get('url', '#')})")
+                st.markdown(f"<div style='color:#00ff85; font-size:1.05rem;'>📌 Fuente: {n.get('fuente','')} | 📅 {n.get('date','')}</div>", unsafe_allow_html=True)
+                resumen = n.get("body", "")[:400] + ('...' if len(n.get("body", "")) > 400 else '')
+                st.markdown(f"<div style='color:#ddd;'>{resumen}</div>", unsafe_allow_html=True)
+                st.markdown("---")
+
+        with tab_log:
+            for entry in log:
+                estado = entry.get("estado", "")
+                if estado == "Correcto":
+                    icon = "✅"
+                elif "sin" in estado.lower():
+                    icon = "⚠️"
+                else:
+                    icon = "❌"
+                err = f" — `{entry['error']}`" if entry.get("error") else ""
+                st.markdown(f"{icon} **{entry['fuente']}** · Encontradas: `{entry['encontradas']}` · Extraídas: `{entry['extraidas']}` · {estado}{err}")
     else:
         st.markdown(f"""
         <div style="text-align:center; padding: 2rem 0; color: #555;">
