@@ -522,7 +522,7 @@ elif st.session_state.current_page == 'mundial':
         'https://www.telemundodeportes.com/copa-mundial-fifa-2026', 'https://www.tudn.com/mundial-2026', 
         'https://www.tvazteca.com/aztecadeportes/', 'https://televen.com/elnoticiero/copa-mundial-de-la-fifa-2026/', 
         'https://noticias.caracoltv.com/golcaracol/mundial-2026', 'https://www.noticiasrcn.com/deportes', 
-        'https://www.tycsports.com/mundial', 'https://mitelefe.com/deportes/', 'https://www.dsports.com/', 
+        'https://www.tycsports.com/mundial', 'https://mitelefe.com/deportes/', 'https://www.directvsports.com/',  
         'https://elcanaldelfutbol.com/', 'https://www.chilevision.cl/deportes', 'https://www.t13.cl/deportes', 
         'https://latinanoticias.pe/deportes', 'https://www.rtve.es/play/deportes/', 
         'https://www.liderendeportes.com/noticias/futbol/mundial-2026/', 'https://meridiano.net/futbol/futbol-internacional/', 

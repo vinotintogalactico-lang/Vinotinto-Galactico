@@ -64,6 +64,19 @@ class GenericExtractor:
                     viewport={"width": 1280, "height": 900},
                     ignore_https_errors=True,
                 )
+                
+                # Bloqueo de anuncios solo para el Mundial para evitar crasheos de memoria
+                if self.categoria == "Mundial Global":
+                    async def route_intercept(route):
+                        req = route.request
+                        if req.resource_type in ["image", "media", "font"]:
+                            await route.abort()
+                        elif any(ad in req.url for ad in ["googleads", "doubleclick", "taboola", "outbrain"]):
+                            await route.abort()
+                        else:
+                            await route.continue_()
+                    await context.route("**/*", route_intercept)
+                
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
                 await page.wait_for_timeout(2000)  # breve espera para JS
@@ -84,7 +97,8 @@ class GenericExtractor:
                             # 2. Filtro estricto de fecha
                             valid_date, _log = is_today(
                                 articulo.get("date", ""),
-                                allow_empty=(self.categoria == "Mundial Global")
+                                allow_empty=(self.categoria == "Mundial Global"),
+                                allow_yesterday=(self.categoria == "Mundial Global")
                             )
                             if valid_date:
                                 articulo["fuente"] = self.fuente
