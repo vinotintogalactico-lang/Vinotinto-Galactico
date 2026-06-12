@@ -16,12 +16,21 @@ from core.content_filter import is_valid_content
 logger = logging.getLogger(__name__)
 
 MAX_NEWS = 3
-TIMEOUT_MS = 20_000
+TIMEOUT_MS = 25_000
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
+
+# Args SEGUROS para Streamlit Cloud — SIN --single-process que revienta todo
+CHROMIUM_ARGS = [
+    "--disable-dev-shm-usage",
+    "--no-sandbox",
+    "--disable-gpu",
+    "--disable-setuid-sandbox",
+    "--disable-software-rasterizer",
+]
 
 
 class GenericExtractor:
@@ -57,15 +66,15 @@ class GenericExtractor:
             async with async_playwright() as pw:
                 browser: Browser = await pw.chromium.launch(
                     headless=True,
-                    args=["--disable-dev-shm-usage", "--no-sandbox", "--disable-gpu", "--disable-setuid-sandbox"]
+                    args=CHROMIUM_ARGS
                 )
                 context: BrowserContext = await browser.new_context(
                     user_agent=USER_AGENT,
                     viewport={"width": 1280, "height": 900},
                     ignore_https_errors=True,
                 )
-                
-                # Bloqueo de anuncios solo para el Mundial para evitar crasheos de memoria
+
+                # Bloqueo de recursos SOLO para el Mundial — nunca para el extractor principal
                 if self.categoria == "Mundial Global":
                     async def route_intercept(route):
                         req = route.request
@@ -76,7 +85,7 @@ class GenericExtractor:
                         else:
                             await route.continue_()
                     await context.route("**/*", route_intercept)
-                
+
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
                 await page.wait_for_timeout(2000)  # breve espera para JS
@@ -93,12 +102,15 @@ class GenericExtractor:
                             # 1. Filtro estricto por palabras clave y cuerpo
                             if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
                                 continue
-                            
+
                             # 2. Filtro estricto de fecha
+                            # Mundial: acepta Ayer, Hoy y Mañana
+                            # Extractor principal: solo Hoy y Mañana
+                            es_mundial = (self.categoria == "Mundial Global")
                             valid_date, _log = is_today(
                                 articulo.get("date", ""),
-                                allow_empty=(self.categoria == "Mundial Global"),
-                                allow_yesterday=(self.categoria == "Mundial Global")
+                                allow_empty=es_mundial,
+                                allow_yesterday=es_mundial
                             )
                             if valid_date:
                                 articulo["fuente"] = self.fuente
@@ -208,9 +220,9 @@ class GenericExtractor:
         """Filtrar URLs que parecen artículos y no secciones/índices/autores."""
         bad = (
             "#", "javascript:", "mailto:", ".pdf", ".jpg", ".png", ".gif", ".mp4",
-            "/autor/", "/author/", "/firmas/", "/tags/", "/etiquetas/", 
+            "/autor/", "/author/", "/firmas/", "/tags/", "/etiquetas/",
             "/resultados/", "/clasificacion/", "/calendario/",
-            "/page/", "/category/", "/categoria/", "/seccion/"
+            "/page/", "/category/", "/categoria/"
         )
         for b in bad:
             if b in url.lower():

@@ -26,13 +26,11 @@ class DefensacentralExtractor(GenericExtractor):
                 if not href:
                     continue
                 href = self._absolute(href)
-                # Solo artículos de la sección /actualidad/
-                if "/actualidad/" not in href:
-                    continue
-                if href not in seen and self._is_article_url(href):
+                # Aceptar cualquier artículo del dominio (no solo /actualidad/)
+                if href not in seen and self._is_article_url(href) and "defensacentral.com" in href:
                     seen.add(href)
                     batch.append(href)
-                if len(batch) >= 15 * 3:
+                if len(batch) >= 15:
                     break
 
             if len(batch) >= 3:
