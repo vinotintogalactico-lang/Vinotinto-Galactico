@@ -78,7 +78,9 @@ class SportExtractor(GenericExtractor):
                 link_path = urlparse(href).path
 
                 # El link debe contener la keyword de la sección del Excel
-                if section_kw and section_kw not in link_path and section_kw != "mundial":
+                if section_kw in ["laliga", "primera"]:
+                    pass # Aceptar cualquier artículo si la sección es LaLiga general
+                elif section_kw and section_kw not in link_path and section_kw != "mundial":
                     continue
 
                 # Excluir páginas de sección/home exactas

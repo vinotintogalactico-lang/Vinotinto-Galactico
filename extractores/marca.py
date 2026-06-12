@@ -58,7 +58,11 @@ class MarcaExtractor(GenericExtractor):
                 if "marca.com" not in href:
                     continue
                 link_path = urlparse(href).path
-                if section_kw and section_kw not in link_path and section_kw != "mundial":
+                # Si la sección es primera-division o laliga, aceptamos todas las noticias de futbol
+                if section_kw in ["primera-division", "laliga"]:
+                    if "/futbol/" not in link_path:
+                        continue
+                elif section_kw and section_kw not in link_path and section_kw != "mundial":
                     continue
                 if any(b in href for b in ["-directo.html", "/directo/", "/resultados/"]):
                     continue
