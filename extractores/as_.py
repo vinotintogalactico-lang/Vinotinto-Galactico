@@ -8,17 +8,7 @@ from extractores.generic import GenericExtractor
 
 class AsExtractor(GenericExtractor):
 
-    async def _get_article_links(self, page: Page) -> list[str]:
-        # Aceptar cookies
-        try:
-            btn = page.locator("#didomi-notice-agree-button")
-            if await btn.is_visible(timeout=2000):
-                await btn.click()
-                await page.wait_for_timeout(1500)
-        except Exception:
-            pass
-
-        # Selectores ordenados: el primero que devuelva >= 3 links en orden de página gana
+    async def _get_article_links_soup(self, soup) -> list[str]:
         selectors = [
             ".a-article-snapshot a[href]",
             ".a-article-list__item a[href]",
@@ -36,9 +26,9 @@ class AsExtractor(GenericExtractor):
         for sel in selectors:
             seen: set[str] = set()
             batch: list[str] = []
-            elements = await page.query_selector_all(sel)
+            elements = soup.select(sel)
             for el in elements:
-                href = await el.get_attribute("href")
+                href = el.get("href")
                 if not href:
                     continue
                 href = self._absolute(href)

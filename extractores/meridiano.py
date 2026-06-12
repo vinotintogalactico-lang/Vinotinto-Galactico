@@ -5,7 +5,7 @@ from extractores.generic import GenericExtractor
 
 class MeridianoExtractor(GenericExtractor):
 
-    async def _get_article_links(self, page: Page) -> list[str]:
+    async def _get_article_links_soup(self, soup) -> list[str]:
         selectors = [
             ".article-list__item a[href]",
             ".post-title a[href]",
@@ -17,9 +17,9 @@ class MeridianoExtractor(GenericExtractor):
         seen: set[str] = set()
         links: list[str] = []
         for sel in selectors:
-            elements = await page.query_selector_all(sel)
+            elements = soup.select(sel)
             for el in elements:
-                href = await el.get_attribute("href")
+                href = el.get("href")
                 if href:
                     href = self._absolute(href)
                     if href not in seen and self._is_meridiano_article(href):
