@@ -55,7 +55,10 @@ class GenericExtractor:
 
         try:
             async with async_playwright() as pw:
-                browser: Browser = await pw.chromium.launch(headless=True)
+                browser: Browser = await pw.chromium.launch(
+                    headless=True,
+                    args=["--disable-dev-shm-usage", "--no-sandbox", "--disable-gpu", "--disable-setuid-sandbox"]
+                )
                 context: BrowserContext = await browser.new_context(
                     user_agent=USER_AGENT,
                     viewport={"width": 1280, "height": 900},

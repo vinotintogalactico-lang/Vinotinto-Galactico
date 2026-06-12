@@ -38,12 +38,14 @@ def is_today(date_str: str, allow_empty: bool = False) -> tuple[bool, str]:
     parsed = _parse_date(date_str.strip(), today)
 
     if parsed is None:
+        if allow_empty:
+            return True, f"No se pudo parsear: '{date_str}' (Aceptada por allow_empty)"
         return False, f"No se pudo parsear: '{date_str}' (Rechazada)"
 
     if parsed == today or parsed == tomorrow:
         return True, f"Aceptado: {parsed} (Hoy/Mañana con respecto a {today})"
     else:
-        return False, f"Rechazado: {parsed} no es de Hoy ni de Mañana"
+        return False, f"Rechazado: {parsed} es muy antigua"
 
 
 def _parse_date(text: str, today: date) -> date | None:
