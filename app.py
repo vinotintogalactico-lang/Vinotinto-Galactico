@@ -540,6 +540,10 @@ elif st.session_state.current_page == 'mundial':
         'https://www.eluniversal.com.mx/deportes/'
     ]
 
+    def _friendly_name(u: str) -> str:
+        domain = urlparse(u).netloc.replace("www.", "")
+        return domain.split(".")[0].title()
+
     sources_dict = {"Mundial Global": [{"nombre": _friendly_name(url), "url": url} for url in FALLBACK_LINKS]}
 
     st.markdown("""
