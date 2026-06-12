@@ -21,12 +21,14 @@ _MESES_EN = {
 from zoneinfo import ZoneInfo
 VNZ_TZ = ZoneInfo("America/Caracas")
 
-def is_today(date_str: str) -> tuple[bool, str]:
+def is_today(date_str: str, allow_empty: bool = False) -> tuple[bool, str]:
     """
     Validación de fecha ESTRICTA: SOLO Hoy y Ayer (por desfase horario España-América).
     No se aceptan fechas viejas ni fechas vacías para evitar que se filtre basura de los menús.
     """
     if not date_str:
+        if allow_empty:
+            return True, "Fecha vacía (Aceptada por allow_empty)"
         return False, "Fecha vacía (Rechazada)"
 
     today = datetime.now(VNZ_TZ).date()

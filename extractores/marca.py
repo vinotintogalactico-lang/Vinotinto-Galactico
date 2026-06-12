@@ -58,7 +58,7 @@ class MarcaExtractor(GenericExtractor):
                 if "marca.com" not in href:
                     continue
                 link_path = urlparse(href).path
-                if section_kw and section_kw not in link_path:
+                if section_kw and section_kw not in link_path and section_kw != "mundial":
                     continue
                 if any(b in href for b in ["-directo.html", "/directo/", "/resultados/"]):
                     continue

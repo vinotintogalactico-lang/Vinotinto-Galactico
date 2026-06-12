@@ -79,7 +79,10 @@ class GenericExtractor:
                                 continue
                             
                             # 2. Filtro estricto de fecha
-                            valid_date, _log = is_today(articulo.get("date", ""))
+                            valid_date, _log = is_today(
+                                articulo.get("date", ""),
+                                allow_empty=(self.categoria == "Mundial Global")
+                            )
                             if valid_date:
                                 articulo["fuente"] = self.fuente
                                 articulo["categoria"] = self.categoria
