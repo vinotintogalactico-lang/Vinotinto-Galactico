@@ -255,9 +255,10 @@ if st.session_state.current_page == 'main':
                 fuentes_keys.append((f, chk_key))
 
             def toggle_all(tk=todo_key, fk=[k for _, k in fuentes_keys]):
-                val = st.session_state[tk]
-                for key in fk:
-                    st.session_state[key] = val
+                if tk in st.session_state:
+                    val = st.session_state[tk]
+                    for key in fk:
+                        st.session_state[key] = val
 
             for f, k in fuentes_keys:
                 if st.checkbox(f["nombre"], key=k):
