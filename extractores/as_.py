@@ -1,40 +1,52 @@
 """Extractor para as.com
 Navega a la sección exacta del Excel y recoge links del área principal de noticias.
-NO filtra por prefijo de URL ya que los artículos de As tienen paths distintos a la sección.
+AS.com tiene protección Cloudflare, necesita Playwright para la portada.
+Los artículos individuales se leen con requests (más ligero).
 """
-from playwright.async_api import Page
+from playwright.async_api import Page, BrowserContext
 from extractores.generic import GenericExtractor
+
+BAD_SEGMENTS = ["/resultados/", "/ficha/", "-directo", "/clasificacion/",
+                "/plantilla/", "/calendario/"]
+
+SELECTORS = [
+    ".a-article-snapshot a[href]",
+    ".a-article-list__item a[href]",
+    ".h-list__item a[href]",
+    "article.a-article a[href]",
+    ".content-list a[href]",
+    "main h2 a[href]",
+    "main h3 a[href]",
+    "main a[href]",
+]
 
 
 class AsExtractor(GenericExtractor):
+    # Usa Playwright para la portada (AS bloquea requests con 403)
+    use_requests = False
 
-    async def _get_article_links_soup(self, soup) -> list[str]:
-        selectors = [
-            ".a-article-snapshot a[href]",
-            ".a-article-list__item a[href]",
-            ".h-list__item a[href]",
-            "article.a-article a[href]",
-            ".content-list a[href]",
-            "main h2 a[href]",
-            "main h3 a[href]",
-            "main a[href]",
-        ]
+    async def _get_article_links(self, page: Page) -> list[str]:
+        # Aceptar cookies si aparecen
+        try:
+            btn = page.locator("#didomi-notice-agree-button")
+            if await btn.is_visible(timeout=2000):
+                await btn.click()
+                await page.wait_for_timeout(1000)
+        except Exception:
+            pass
 
-        bad_segments = ["/resultados/", "/ficha/", "-directo", "/clasificacion/",
-                        "/plantilla/", "/calendario/"]
-
-        for sel in selectors:
+        for sel in SELECTORS:
             seen: set[str] = set()
             batch: list[str] = []
-            elements = soup.select(sel)
+            elements = await page.query_selector_all(sel)
             for el in elements:
-                href = el.get("href")
+                href = await el.get_attribute("href")
                 if not href:
                     continue
                 href = self._absolute(href)
                 if "as.com" not in href:
                     continue
-                if any(b in href for b in bad_segments):
+                if any(b in href for b in BAD_SEGMENTS):
                     continue
                 if href not in seen and self._is_article_url(href):
                     seen.add(href)
@@ -47,22 +59,31 @@ class AsExtractor(GenericExtractor):
 
         return []
 
-    async def _extract_article(self, context, url: str) -> dict | None:
+    async def _extract_article(self, context: BrowserContext, url: str) -> dict | None:
+        """Abre el artículo con requests (mucho más ligero que Playwright)."""
         try:
             from core.article_parser import parse_article
             import requests
             import asyncio
-            
+            from bs4 import BeautifulSoup
+
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/124.0.0.0 Safari/537.36"
+                ),
                 "Accept-Language": "es-ES,es;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Referer": "https://as.com/",
             }
-            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
+            resp = await asyncio.to_thread(
+                requests.get, url, headers=headers, timeout=15.0
+            )
             if resp.status_code != 200:
                 return None
-                
+
             html = resp.text
-            from bs4 import BeautifulSoup
             soup = BeautifulSoup(html, "html.parser")
 
             title = soup.find("h1")
