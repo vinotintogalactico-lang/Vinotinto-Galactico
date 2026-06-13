@@ -1,41 +1,39 @@
 """Extractor para as.com
 Navega a la sección exacta del Excel y recoge links del área principal de noticias.
-AS.com tiene protección Cloudflare, necesita Playwright para la portada.
-Los artículos individuales se leen con requests (más ligero).
+NO filtra por prefijo de URL ya que los artículos de As tienen paths distintos a la sección.
 """
-from playwright.async_api import Page, BrowserContext
+from playwright.async_api import Page
 from extractores.generic import GenericExtractor
-
-BAD_SEGMENTS = ["/resultados/", "/ficha/", "-directo", "/clasificacion/",
-                "/plantilla/", "/calendario/"]
-
-SELECTORS = [
-    ".a-article-snapshot a[href]",
-    ".a-article-list__item a[href]",
-    ".h-list__item a[href]",
-    "article.a-article a[href]",
-    ".content-list a[href]",
-    "main h2 a[href]",
-    "main h3 a[href]",
-    "main a[href]",
-]
 
 
 class AsExtractor(GenericExtractor):
-    # Usa Playwright para la portada (AS bloquea requests con 403)
-    use_requests = False
 
     async def _get_article_links(self, page: Page) -> list[str]:
-        # Aceptar cookies si aparecen
+        # Aceptar cookies
         try:
             btn = page.locator("#didomi-notice-agree-button")
             if await btn.is_visible(timeout=2000):
                 await btn.click()
-                await page.wait_for_timeout(1000)
+                await page.wait_for_timeout(1500)
         except Exception:
             pass
 
-        for sel in SELECTORS:
+        # Selectores ordenados: el primero que devuelva >= 3 links en orden de página gana
+        selectors = [
+            ".a-article-snapshot a[href]",
+            ".a-article-list__item a[href]",
+            ".h-list__item a[href]",
+            "article.a-article a[href]",
+            ".content-list a[href]",
+            "main h2 a[href]",
+            "main h3 a[href]",
+            "main a[href]",
+        ]
+
+        bad_segments = ["/resultados/", "/ficha/", "-directo", "/clasificacion/",
+                        "/plantilla/", "/calendario/"]
+
+        for sel in selectors:
             seen: set[str] = set()
             batch: list[str] = []
             elements = await page.query_selector_all(sel)
@@ -46,7 +44,7 @@ class AsExtractor(GenericExtractor):
                 href = self._absolute(href)
                 if "as.com" not in href:
                     continue
-                if any(b in href for b in BAD_SEGMENTS):
+                if any(b in href for b in bad_segments):
                     continue
                 if href not in seen and self._is_article_url(href):
                     seen.add(href)
@@ -59,31 +57,24 @@ class AsExtractor(GenericExtractor):
 
         return []
 
-    async def _extract_article(self, context: BrowserContext, url: str) -> dict | None:
-        """Abre el artículo con requests (mucho más ligero que Playwright)."""
+    async def _extract_article(self, context, url: str) -> dict | None:
+        page = await context.new_page()
         try:
             from core.article_parser import parse_article
-            import requests
-            import asyncio
             from bs4 import BeautifulSoup
 
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/124.0.0.0 Safari/537.36"
-                ),
-                "Accept-Language": "es-ES,es;q=0.9",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Referer": "https://as.com/",
-            }
-            resp = await asyncio.to_thread(
-                requests.get, url, headers=headers, timeout=15.0
-            )
-            if resp.status_code != 200:
-                return None
+            await page.goto(url, timeout=20_000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(1500)
 
-            html = resp.text
+            try:
+                btn = page.locator("#didomi-notice-agree-button")
+                if await btn.is_visible(timeout=1000):
+                    await btn.click()
+                    await page.wait_for_timeout(1000)
+            except Exception:
+                pass
+
+            html = await page.content()
             soup = BeautifulSoup(html, "html.parser")
 
             title = soup.find("h1")
@@ -95,6 +86,7 @@ class AsExtractor(GenericExtractor):
             author = soup.select_one(".article-author__name, .s-autor-name, .author")
             author_text = author.get_text(strip=True) if author else ""
 
+            # Priorizar el atributo datetime del <time>
             date_text = ""
             time_el = soup.select_one("time[datetime]")
             if time_el and time_el.get("datetime"):
@@ -108,3 +100,5 @@ class AsExtractor(GenericExtractor):
             return art if art.get("title") else None
         except Exception:
             return None
+        finally:
+            await page.close()

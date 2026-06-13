@@ -23,9 +23,18 @@ def _section_keyword_from_url(url: str) -> str:
 
 class MarcaExtractor(GenericExtractor):
 
-    async def _get_article_links_soup(self, soup) -> list[str]:
+    async def _get_article_links(self, page: Page) -> list[str]:
         seen: set[str] = set()
         links: list[str] = []
+
+        # Aceptar cookies
+        try:
+            btn = page.locator("#didomi-notice-agree-button")
+            if await btn.is_visible(timeout=2000):
+                await btn.click()
+                await page.wait_for_timeout(1500)
+        except Exception:
+            pass
 
         section_kw = _section_keyword_from_url(self.url)
 
@@ -40,20 +49,16 @@ class MarcaExtractor(GenericExtractor):
         for sel in selectors:
             seen: set[str] = set()
             batch: list[str] = []
-            elements = soup.select(sel)
+            elements = await page.query_selector_all(sel)
             for el in elements:
-                href = el.get("href")
+                href = await el.get_attribute("href")
                 if not href:
                     continue
                 href = self._absolute(href)
                 if "marca.com" not in href:
                     continue
                 link_path = urlparse(href).path
-                # Si la sección es primera-division o laliga, aceptamos todas las noticias de futbol
-                if section_kw in ["primera-division", "laliga"]:
-                    if "/futbol/" not in link_path:
-                        continue
-                elif section_kw and section_kw not in link_path and section_kw != "mundial":
+                if section_kw and section_kw not in link_path:
                     continue
                 if any(b in href for b in ["-directo.html", "/directo/", "/resultados/"]):
                     continue
@@ -69,21 +74,23 @@ class MarcaExtractor(GenericExtractor):
         return []
 
     async def _extract_article(self, context, url: str) -> dict | None:
+        page = await context.new_page()
         try:
             from core.article_parser import parse_article
-            import requests
-            import asyncio
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Accept-Language": "es-ES,es;q=0.9",
-            }
-            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
-            if resp.status_code != 200:
-                return None
-                
-            html = resp.text
             from bs4 import BeautifulSoup
+
+            await page.goto(url, timeout=20_000, wait_until="domcontentloaded")
+            await page.wait_for_timeout(1500)
+
+            try:
+                btn = page.locator("#didomi-notice-agree-button")
+                if await btn.is_visible(timeout=1000):
+                    await btn.click()
+                    await page.wait_for_timeout(1000)
+            except Exception:
+                pass
+
+            html = await page.content()
             soup = BeautifulSoup(html, "html.parser")
 
             title = soup.find("h1")
@@ -109,3 +116,5 @@ class MarcaExtractor(GenericExtractor):
             return art if art.get("title") else None
         except Exception:
             return None
+        finally:
+            await page.close()

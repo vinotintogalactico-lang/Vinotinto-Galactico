@@ -18,41 +18,30 @@ _MESES_EN = {
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
 
-from zoneinfo import ZoneInfo
-VNZ_TZ = ZoneInfo("America/Caracas")
-
-def is_today(date_str: str, allow_empty: bool = False, allow_yesterday: bool = False) -> tuple[bool, str]:
+def is_today(date_str: str) -> tuple[bool, str]:
     """
-    Validación de fecha ESTRICTA: SOLO Hoy y Mañana por defecto.
-    Se permite 'Ayer' solo si allow_yesterday=True (ej. para el Mundial).
-    No se aceptan fechas vacías por defecto para evitar que se filtre basura de los menús.
+    Validación de fecha ESTRICTA: SOLO Hoy y Ayer (por desfase horario España-América).
+    No se aceptan fechas viejas ni fechas vacías para evitar que se filtre basura de los menús.
     """
     if not date_str:
-        if allow_empty:
-            return True, "Fecha vacía (Aceptada por allow_empty)"
         return False, "Fecha vacía (Rechazada)"
 
-    today = datetime.now(VNZ_TZ).date()
+    today = date.today()
     from datetime import timedelta
     tomorrow = today + timedelta(days=1)
-    yesterday = today - timedelta(days=1)
     
-    parsed = _parse_date(date_str.strip(), today)
+    parsed = _parse_date(date_str.strip())
 
     if parsed is None:
-        if allow_empty:
-            return True, f"No se pudo parsear: '{date_str}' (Aceptada por allow_empty)"
         return False, f"No se pudo parsear: '{date_str}' (Rechazada)"
 
     if parsed == today or parsed == tomorrow:
         return True, f"Aceptado: {parsed} (Hoy/Mañana con respecto a {today})"
-    elif allow_yesterday and parsed == yesterday:
-        return True, f"Aceptado: {parsed} (Ayer permitido con respecto a {today})"
     else:
-        return False, f"Rechazado: {parsed} es muy antigua"
+        return False, f"Rechazado: {parsed} no es de Hoy ni de Mañana"
 
 
-def _parse_date(text: str, today: date) -> date | None:
+def _parse_date(text: str) -> date | None:
     """Intenta parsear una cadena de fecha en varios formatos."""
     text = text.strip()
 
@@ -79,11 +68,11 @@ def _parse_date(text: str, today: date) -> date | None:
 
     # 3. "hace X minutos/horas/segundos" → hoy
     if re.search(r"hace\s+\d+\s+(minuto|hora|segundo)", text, re.I):
-        return today
+        return date.today()
     if re.search(r"\d+\s*(min|hour|ago|h ago|m ago)", text, re.I):
-        return today
+        return date.today()
     if re.search(r"just now|ahora mismo|hace un momento|ahora", text, re.I):
-        return today
+        return date.today()
 
     # 4. Texto con mes en español/inglés: "7 de junio de 2025" o "7 junio 2025"
     text_lower = text.lower()
@@ -120,9 +109,10 @@ def _parse_date(text: str, today: date) -> date | None:
         try:
             from dateutil import parser
             dt = parser.parse(text, fuzzy=True, dayfirst=True).date()
+            hoy = date.today()
             from datetime import timedelta
-            manana = today + timedelta(days=1)
-            if dt == today or dt == manana:
+            manana = hoy + timedelta(days=1)
+            if dt == hoy or dt == manana:
                 return dt
             else:
                 return None

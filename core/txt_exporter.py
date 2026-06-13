@@ -1,42 +1,49 @@
-"""
-Exportador a TXT
-"""
-from datetime import datetime
+from pathlib import Path
+from datetime import date
+
+OUTPUT_PATH = Path(__file__).parent.parent / "output" / "noticias.txt"
 
 
-def export_txt(noticias: list, output_path: str):
+def export_txt(noticias: list[dict], log: list[dict]) -> Path:
+    """
+    Genera noticias.txt con todas las noticias extraídas.
+    Devuelve la ruta del archivo generado.
+    """
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     lines = []
+
     lines.append("=" * 80)
-    lines.append("VINOTINTO GALÁCTICO - NOTICIAS EXTRAÍDAS")
-    lines.append(f"Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+    lines.append(f"VINOTINTO GALÁCTICO — EXTRACCIÓN DE NOTICIAS")
+    lines.append(f"Fecha: {date.today().strftime('%d/%m/%Y')}")
+    lines.append(f"Total noticias: {len(noticias)}")
     lines.append("=" * 80)
     lines.append("")
 
-    for idx, noticia in enumerate(noticias, 1):
-        titulo = noticia.get('titulo', noticia.get('title', 'Sin título'))
-        resumen = noticia.get('resumen', noticia.get('summary', noticia.get('content', '')))
-        url = noticia.get('url', '')
-        fuente = noticia.get('fuente', noticia.get('source', 'Desconocida'))
-        categoria = noticia.get('categoria', noticia.get('category', ''))
-        fecha = noticia.get('fecha', noticia.get('date', ''))
-
-        lines.append(f"NOTICIA #{idx}")
-        lines.append("-" * 80)
-        lines.append(f"TÍTULO: {titulo}")
-        if categoria:
-            lines.append(f"CATEGORÍA: {categoria}")
-        lines.append(f"FUENTE: {fuente}")
-        if fecha:
-            lines.append(f"FECHA: {fecha}")
-        lines.append(f"URL: {url}")
+    for i, n in enumerate(noticias, 1):
+        lines.append(f"{'─' * 80}")
+        lines.append(f"NOTICIA #{i}")
+        lines.append(f"FUENTE: {n.get('fuente', '')}")
+        lines.append(f"CATEGORÍA: {n.get('categoria', '')}")
+        lines.append(f"TÍTULO: {n.get('title', '')}")
+        if n.get("subtitle"):
+            lines.append(f"SUBTÍTULO: {n['subtitle']}")
+        if n.get("author"):
+            lines.append(f"AUTOR: {n['author']}")
+        lines.append(f"FECHA: {n.get('date', '')}")
+        lines.append(f"URL: {n.get('url', '')}")
         lines.append("")
-        lines.append("RESUMEN/CONTENIDO:")
-        lines.append(resumen if resumen else "Sin contenido disponible")
-        lines.append("")
-        lines.append("=" * 80)
+        lines.append(n.get("body", ""))
         lines.append("")
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines))
+    lines.append("=" * 80)
+    lines.append("INFORME DE CONTROL")
+    lines.append("=" * 80)
+    for entry in log:
+        lines.append(f"Fuente: {entry['fuente']}")
+        lines.append(f"  Encontradas: {entry['encontradas']}  |  Extraídas: {entry['extraidas']}  |  Estado: {entry['estado']}")
+        if entry.get("error"):
+            lines.append(f"  Error: {entry['error']}")
+        lines.append("")
 
-    return len(noticias)
+    OUTPUT_PATH.write_text("\n".join(lines), encoding="utf-8")
+    return OUTPUT_PATH

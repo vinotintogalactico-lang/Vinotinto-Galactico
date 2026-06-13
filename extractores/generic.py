@@ -6,8 +6,6 @@ sobrescriben métodos cuando la estructura del sitio lo requiere.
 from __future__ import annotations
 import asyncio
 import logging
-from datetime import datetime
-from zoneinfo import ZoneInfo
 from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 from core.article_parser import parse_article
 from core.date_validator import is_today
@@ -16,22 +14,12 @@ from core.content_filter import is_valid_content
 logger = logging.getLogger(__name__)
 
 MAX_NEWS = 3
-TIMEOUT_MS = 25_000
+TIMEOUT_MS = 20_000
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/124.0.0.0 Safari/537.36"
 )
-
-# Args SEGUROS para Streamlit Cloud — SIN --single-process que revienta todo
-CHROMIUM_ARGS = [
-    "--disable-dev-shm-usage",
-    "--no-sandbox",
-    "--disable-gpu",
-    "--disable-setuid-sandbox",
-    "--disable-software-rasterizer",
-    "--js-flags=--max-old-space-size=256"
-]
 
 
 class GenericExtractor:
@@ -51,6 +39,9 @@ class GenericExtractor:
 
     # ── Punto de entrada ────────────────────────────────────────────────────
     async def extract(self) -> tuple[list[dict], dict]:
+        """
+        Devuelve (lista_noticias, log_entry).
+        """
         noticias: list[dict] = []
         log: dict = {
             "fuente": self.fuente,
@@ -60,87 +51,17 @@ class GenericExtractor:
             "error": "",
         }
 
-        # -------------------------------------------------------------
-        # NUEVO MODO LIGERO (Cero consumo de RAM)
-        # -------------------------------------------------------------
-        if getattr(self, "use_requests", True):
-            try:
-                import requests
-                import asyncio
-                from bs4 import BeautifulSoup
-                
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Accept-Language": "es-ES,es;q=0.9",
-                }
-                
-                resp = await asyncio.to_thread(requests.get, self.url, headers=headers, timeout=20.0)
-                if resp.status_code != 200:
-                    raise Exception(f"HTTP Error {resp.status_code}")
-                    
-                html = resp.text
-                soup = BeautifulSoup(html, "html.parser")
-                
-                links = await self._get_article_links_soup(soup)
-                log["encontradas"] = len(links)
-                
-                for link in links:
-                    if len(noticias) >= MAX_NEWS:
-                        break
-                    try:
-                        articulo = await self._extract_article_requests(link)
-                        if articulo:
-                            if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
-                                continue
-
-                            es_mundial = (self.categoria == "Mundial Global")
-                            valid_date, _log = is_today(
-                                articulo.get("date", ""),
-                                allow_empty=es_mundial,
-                                allow_yesterday=es_mundial
-                            )
-                            if valid_date:
-                                articulo["fuente"] = self.fuente
-                                articulo["categoria"] = self.categoria
-                                noticias.append(articulo)
-                    except Exception as exc:
-                        logger.warning("Error en artículo %s: %s", link, exc)
-
-            except Exception as exc:
-                log["error"] = str(exc)
-                log["estado"] = "Error"
-                logger.error("Error en fuente %s: %s", self.fuente, exc)
-                return noticias, log
-
-            log["extraidas"] = len(noticias)
-            log["estado"] = "Correcto" if noticias else "Sin noticias del día"
-            return noticias, log
-
-        # -------------------------------------------------------------
-        # MODO PLAYWRIGHT (Antiguo, solo para apps React/SPA)
-        # -------------------------------------------------------------
         try:
             async with async_playwright() as pw:
-                browser: Browser = await pw.chromium.launch(headless=True, args=CHROMIUM_ARGS)
+                browser: Browser = await pw.chromium.launch(headless=True)
                 context: BrowserContext = await browser.new_context(
                     user_agent=USER_AGENT,
                     viewport={"width": 1280, "height": 900},
                     ignore_https_errors=True,
                 )
-
-                async def route_intercept(route):
-                    req = route.request
-                    if req.resource_type == "media":
-                        await route.abort()
-                    elif any(ad in req.url for ad in ["googleads", "doubleclick", "taboola", "outbrain", "criteo", "teads"]):
-                        await route.abort()
-                    else:
-                        await route.continue_()
-                await context.route("**/*", route_intercept)
-
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
-                await page.wait_for_timeout(2000)
+                await page.wait_for_timeout(2000)  # breve espera para JS
 
                 links = await self._get_article_links(page)
                 log["encontradas"] = len(links)
@@ -151,21 +72,21 @@ class GenericExtractor:
                     try:
                         articulo = await self._extract_article(context, link)
                         if articulo:
+                            # 1. Filtro estricto por palabras clave y cuerpo
                             if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
                                 continue
-                            es_mundial = (self.categoria == "Mundial Global")
-                            valid_date, _log = is_today(
-                                articulo.get("date", ""),
-                                allow_empty=es_mundial,
-                                allow_yesterday=es_mundial
-                            )
+                            
+                            # 2. Filtro estricto de fecha
+                            valid_date, _log = is_today(articulo.get("date", ""))
                             if valid_date:
                                 articulo["fuente"] = self.fuente
                                 articulo["categoria"] = self.categoria
                                 noticias.append(articulo)
                     except Exception as exc:
                         logger.warning("Error en artículo %s: %s", link, exc)
+
                 await browser.close()
+
         except Exception as exc:
             log["error"] = str(exc)
             log["estado"] = "Error"
@@ -217,51 +138,41 @@ class GenericExtractor:
         return []
 
     # ── Extracción de artículo individual ───────────────────────────────────
-    async def _get_article_links_soup(self, soup) -> list[str]:
-        return []
-
-    async def _extract_article_requests(self, url: str) -> dict | None:
+    async def _extract_article(self, context: BrowserContext, url: str) -> dict | None:
+        page: Page = await context.new_page()
         try:
-            from core.article_parser import parse_article
-            import requests
-            import asyncio
-            
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept-Language": "es-ES,es;q=0.9",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-            }
-            
-            resp = await asyncio.to_thread(requests.get, url, headers=headers, timeout=15.0)
-            if resp.status_code != 200:
-                return None
-            
-            html = resp.text
-            from bs4 import BeautifulSoup
-            soup_article = BeautifulSoup(html, "html.parser")
+            await page.goto(url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
+            await page.wait_for_timeout(1500)
 
-            title = soup_article.find("h1")
-            title_text = title.get_text(strip=True) if title else ""
+            # Intentar aceptar cookies si hay un popup bloqueando
+            try:
+                btn = page.locator(
+                    "#didomi-notice-agree-button, .didomi-continue-without-agreeing, "
+                    ".cmplz-accept, #onetrust-accept-btn-handler"
+                )
+                if await btn.first.is_visible(timeout=800):
+                    await btn.first.click()
+                    await page.wait_for_timeout(1000)
+            except Exception:
+                pass
 
-            subtitle = soup_article.select_one("h2, .subtitle, .standfirst")
-            subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
+            html = await page.content()
 
-            author = soup_article.select_one(".author, [rel='author']")
-            author_text = author.get_text(strip=True) if author else ""
-
+            # Intentar extraer fecha del atributo datetime antes de pasar el HTML
+            from bs4 import BeautifulSoup as _BS
+            _soup = _BS(html, "html.parser")
             date_text = ""
-            time_el = soup_article.select_one("time[datetime]")
-            if time_el and time_el.get("datetime"):
-                date_text = time_el["datetime"]
-            else:
-                date_fallback = soup_article.select_one("time, .date")
-                date_text = date_fallback.get_text(strip=True) if date_fallback else ""
+            _time = _soup.select_one("time[datetime]")
+            if _time and _time.get("datetime"):
+                date_text = _time["datetime"]
 
-            art = parse_article(html, url, title=title_text, subtitle=subtitle_text,
-                                author=author_text, date=date_text)
+            art = parse_article(html, url, date=date_text)
             return art if art.get("title") else None
-        except Exception:
+        except Exception as exc:
+            logger.warning("No se pudo abrir %s: %s", url, exc)
             return None
+        finally:
+            await page.close()
 
 
     # ── Utilidades ───────────────────────────────────────────────────────────
@@ -275,9 +186,9 @@ class GenericExtractor:
         """Filtrar URLs que parecen artículos y no secciones/índices/autores."""
         bad = (
             "#", "javascript:", "mailto:", ".pdf", ".jpg", ".png", ".gif", ".mp4",
-            "/autor/", "/author/", "/firmas/", "/tags/", "/etiquetas/",
+            "/autor/", "/author/", "/firmas/", "/tags/", "/etiquetas/", 
             "/resultados/", "/clasificacion/", "/calendario/",
-            "/page/", "/category/", "/categoria/"
+            "/page/", "/category/", "/categoria/", "/seccion/"
         )
         for b in bad:
             if b in url.lower():
