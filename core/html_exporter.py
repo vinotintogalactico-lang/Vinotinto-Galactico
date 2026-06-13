@@ -1,18 +1,10 @@
 """
-Exportador a HTML - Compatible con estructura flexible
+Exportador a HTML
 """
 from datetime import datetime
-from pathlib import Path
 
 
 def export_html(noticias: list, output_path: str):
-    """
-    Exporta noticias a HTML
-    
-    Args:
-        noticias: Lista de dicts con noticias
-        output_path: Ruta del archivo de salida
-    """
     html_content = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -72,7 +64,6 @@ def export_html(noticias: list, output_path: str):
         .news-url {{
             color: #3498db;
             text-decoration: none;
-            font-size: 0.9rem;
         }}
         .news-url:hover {{
             text-decoration: underline;
@@ -88,16 +79,12 @@ def export_html(noticias: list, output_path: str):
 """
 
     for idx, noticia in enumerate(noticias, 1):
-        # Estructura flexible - usar .get() para evitar KeyError
         titulo = noticia.get('titulo', noticia.get('title', 'Sin título'))
         resumen = noticia.get('resumen', noticia.get('summary', noticia.get('content', '')))
         url = noticia.get('url', '')
         fuente = noticia.get('fuente', noticia.get('source', 'Desconocida'))
         categoria = noticia.get('categoria', noticia.get('category', ''))
         fecha = noticia.get('fecha', noticia.get('date', ''))
-        
-        # Verificar si existe 'estado' antes de usarlo
-        estado = noticia.get('estado', 'Correcto')
 
         html_content += f"""
         <div class="news-item">

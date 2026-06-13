@@ -1,18 +1,10 @@
 """
-Exportador a TXT - Compatible con la estructura de noticias
+Exportador a TXT
 """
 from datetime import datetime
-from pathlib import Path
 
 
 def export_txt(noticias: list, output_path: str):
-    """
-    Exporta noticias a TXT
-    
-    Args:
-        noticias: Lista de dicts con keys: 'titulo', 'resumen', 'url', 'fuente', 'categoria', 'fecha'
-        output_path: Ruta del archivo de salida
-    """
     lines = []
     lines.append("=" * 80)
     lines.append("VINOTINTO GALÁCTICO - NOTICIAS EXTRAÍDAS")
@@ -21,7 +13,6 @@ def export_txt(noticias: list, output_path: str):
     lines.append("")
 
     for idx, noticia in enumerate(noticias, 1):
-        # Estructura flexible - acepta diferentes formatos
         titulo = noticia.get('titulo', noticia.get('title', 'Sin título'))
         resumen = noticia.get('resumen', noticia.get('summary', noticia.get('content', '')))
         url = noticia.get('url', '')

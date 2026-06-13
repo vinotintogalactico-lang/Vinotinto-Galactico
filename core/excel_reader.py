@@ -1,7 +1,6 @@
 """
-Lector de Excels - Mantiene el orden exacto del Excel
+Lector de Excels - Orden exacto del Excel
 """
-import re
 from pathlib import Path
 from urllib.parse import urlparse
 import pandas as pd
@@ -11,7 +10,6 @@ DATA_DIR = BASE_DIR / "data"
 
 
 def _nombre_desde_url(url: str) -> str:
-    """Extrae nombre legible desde URL"""
     try:
         netloc = urlparse(url).netloc.lower()
         if netloc.startswith("www."):
@@ -22,22 +20,16 @@ def _nombre_desde_url(url: str) -> str:
 
 
 def load_sources_vinotinto() -> dict:
-    """
-    Lee 'data/Prensa Deportiva.xlsx'
-    MANTIENE EL ORDEN EXACTO del Excel
-    """
     excel_path = DATA_DIR / "Prensa Deportiva.xlsx"
     if not excel_path.exists():
         raise FileNotFoundError(f"No existe: {excel_path}")
 
-    # Leer todas las celdas en orden
     df = pd.read_excel(excel_path, header=None)
     celdas = []
     for col in df.columns:
         for val in df[col].dropna().astype(str):
             celdas.append(val.strip())
 
-    # Mapeo de categorías del Excel al sistema
     category_mapping = {
         "REAL MADRID": "Real Madrid Masculino",
         "REAL MADRID FEMENINO": "Real Madrid Femenino",
@@ -59,7 +51,6 @@ def load_sources_vinotinto() -> dict:
         if not celda:
             continue
 
-        # ¿Es una categoría? (termina en ":" y no es URL)
         if celda.endswith(":") and not celda.startswith("http"):
             nombre_cat = celda[:-1].strip().upper()
             categoria_actual = category_mapping.get(nombre_cat)
@@ -67,28 +58,22 @@ def load_sources_vinotinto() -> dict:
                 sources[categoria_actual] = []
             continue
 
-        # ¿Es una URL?
         if celda.startswith("http"):
             if celda in urls_vistas:
                 continue
             urls_vistas.add(celda)
             if categoria_actual:
                 nombre = _nombre_desde_url(celda)
-                # Evitar duplicados de nombre
                 nombres_existentes = [n for n, _ in sources[categoria_actual]]
                 if nombre in nombres_existentes:
                     nombre = f"{nombre} ({len(nombres_existentes)+1})"
                 sources[categoria_actual].append((nombre, celda))
 
-    # Eliminar categorías vacías
     sources = {k: v for k, v in sources.items() if v}
     return sources
 
 
 def load_sources_mundial() -> dict:
-    """
-    Lee 'data/Prensa_Mundial_2026_ListaEnlaces.xlsx'
-    """
     excel_path = DATA_DIR / "Prensa_Mundial_2026_ListaEnlaces.xlsx"
     if not excel_path.exists():
         raise FileNotFoundError(f"No existe: {excel_path}")
