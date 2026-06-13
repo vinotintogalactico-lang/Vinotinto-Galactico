@@ -5,8 +5,7 @@ from extractores.generic import GenericExtractor
 
 class DefensacentralExtractor(GenericExtractor):
 
-    async def _get_article_links(self, page: Page) -> list[str]:
-        # Selectores específicos de Defensa Central
+    async def _get_article_links_soup(self, soup) -> list[str]:
         selectors = [
             "li.c-highlight__item a[href]",
             "div.c-breaking-news__wrapper a[href]",
@@ -20,19 +19,16 @@ class DefensacentralExtractor(GenericExtractor):
         for sel in selectors:
             seen: set[str] = set()
             batch: list[str] = []
-            elements = await page.query_selector_all(sel)
+            elements = soup.select(sel)
             for el in elements:
-                href = await el.get_attribute("href")
+                href = el.get("href")
                 if not href:
                     continue
                 href = self._absolute(href)
-                # Solo artículos de la sección /actualidad/
-                if "/actualidad/" not in href:
-                    continue
-                if href not in seen and self._is_article_url(href):
+                if href not in seen and self._is_article_url(href) and "defensacentral.com" in href:
                     seen.add(href)
                     batch.append(href)
-                if len(batch) >= 15 * 3:
+                if len(batch) >= 15:
                     break
 
             if len(batch) >= 3:

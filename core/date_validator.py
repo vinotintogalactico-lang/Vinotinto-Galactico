@@ -21,27 +21,35 @@ _MESES_EN = {
 from zoneinfo import ZoneInfo
 VNZ_TZ = ZoneInfo("America/Caracas")
 
-def is_today(date_str: str) -> tuple[bool, str]:
+def is_today(date_str: str, allow_empty: bool = False, allow_yesterday: bool = False) -> tuple[bool, str]:
     """
-    Validación de fecha ESTRICTA: SOLO Hoy y Ayer (por desfase horario España-América).
-    No se aceptan fechas viejas ni fechas vacías para evitar que se filtre basura de los menús.
+    Validación de fecha ESTRICTA: SOLO Hoy y Mañana por defecto.
+    Se permite 'Ayer' solo si allow_yesterday=True (ej. para el Mundial).
+    No se aceptan fechas vacías por defecto para evitar que se filtre basura de los menús.
     """
     if not date_str:
+        if allow_empty:
+            return True, "Fecha vacía (Aceptada por allow_empty)"
         return False, "Fecha vacía (Rechazada)"
 
     today = datetime.now(VNZ_TZ).date()
     from datetime import timedelta
     tomorrow = today + timedelta(days=1)
+    yesterday = today - timedelta(days=1)
     
     parsed = _parse_date(date_str.strip(), today)
 
     if parsed is None:
+        if allow_empty:
+            return True, f"No se pudo parsear: '{date_str}' (Aceptada por allow_empty)"
         return False, f"No se pudo parsear: '{date_str}' (Rechazada)"
 
     if parsed == today or parsed == tomorrow:
         return True, f"Aceptado: {parsed} (Hoy/Mañana con respecto a {today})"
+    elif allow_yesterday and parsed == yesterday:
+        return True, f"Aceptado: {parsed} (Ayer permitido con respecto a {today})"
     else:
-        return False, f"Rechazado: {parsed} no es de Hoy ni de Mañana"
+        return False, f"Rechazado: {parsed} es muy antigua"
 
 
 def _parse_date(text: str, today: date) -> date | None:
