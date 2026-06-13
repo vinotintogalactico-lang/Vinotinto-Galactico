@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Prensa - Vinotinto Galáctico</title>
+    <style>
+        :root {
+            --bg-color: #0b0205;
+            --container-bg: #16050b;
+            --card-bg: #230a13;
+            --card-hover: #35101d;
+            --vinotinto: #7a1c37;
+            --vinotinto-light: #a62b4e;
+            --gold: #ffcc00;
+            --text-color: #ffffff;
+            --text-muted: #d0c2c6;
+            --border-color: #4a1524;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 40px;
+            background-image: radial-gradient(circle at 50% 0%, #300a16 0%, #0b0205 70%);
+        }
+
+        /* Banner de Cabecera */
+        .banner-container {
+            width: 100%;
+            height: 220px;
+            position: relative;
+            background-color: var(--vinotinto);
+            background-image: url('banner-vinotinto.png');
+            background-size: cover;
+            background-position: center;
+            border-bottom: 4px solid var(--gold);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+
+        .banner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(11,2,5,0.9));
+        }
+
+        .header-content {
+            position: absolute;
+            bottom: -30px;
+            left: 5%;
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .logo-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            border: 4px solid var(--gold);
+            background-color: #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+
+        .title-area {
+            margin-bottom: 15px;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            color: #fff;
+        }
+
+        .title-area h1 span {
+            color: var(--gold);
+        }
+
+        .title-area p {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* Contenedor Principal */
+        .main-container {
+            max-width: 1300px;
+            margin: 60px auto 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Grid de Categorías */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        /* Tarjetas de Sección */
+        .section-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(122,28,55,0.3);
+            border-color: var(--vinotinto-light);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--vinotinto) 0%, #4a1122 100%);
+            padding: 15px 20px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header .badge {
+            background-color: rgba(255,255,255,0.15);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--gold);
+        }
+
+        .links-list {
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .links-list li {
+            border-bottom: 1px solid rgba(74,21,36,0.5);
+        }
+
+        .links-list li:last-child {
+            border-bottom: none;
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14.5px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease, padding-left 0.2s ease;
+        }
+
+        .link-item:hover {
+            background-color: var(--card-hover);
+            color: #ffffff;
+            padding-left: 25px;
+        }
+
+        .link-item::before {
+            content: "▶";
+            font-size: 10px;
+            color: var(--gold);
+            margin-right: 10px;
+            transition: transform 0.2s ease;
+        }
+
+        .link-item:hover::before {
+            transform: scale(1.2);
+        }
+
+        /* Estilos específicos para destacar secciones venezolanas */
+        .section-venezuela {
+            border: 1px solid rgba(255, 204, 0, 0.3);
+        }
+        
+        .section-venezuela .card-header {
+            background: linear-gradient(135deg, #501023 0%, var(--vinotinto) 100%);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 12px;
+            color: rgba(208, 194, 198, 0.4);
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="banner-container">
+        <div class="banner-overlay"></div>
+        <div class="header-content">
+            <img src="logo.png" alt="Logo Vinotinto Galáctico" class="logo-img">
+            <div class="title-area">
+                <h1>Vinotinto <span>Galáctico</span></h1>
+                <p>Panel de Control Automatizado - Accesos Directos de Prensa Deportiva</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="grid-container">
+
+            <div class="section-card">
+                <div class="card-header">
+                    <span>Real Madrid M.</span>
+                    <span class="badge">8</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.realmadrid.com/es-ES/futbol/primer-equipo-masculino/inicio">Real Madrid Web Oficial</a></li>
+                    <li><a class="link-item" target="_blank" href="https://as.com/noticias/real-madrid/?omnil=mod_esc">Diario AS - Real Madrid</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.mundodeportivo.com/futbol/real-madrid">Mundo Deportivo - Real Madrid</a></li>
+                    <li><a class="link-item" target="_blank" href="https://defensacentral.com/real_madrid">Defensa Central</a></li>
+                    <li><a class="link-item" target="_blank" href="https://madridistareal.com/real-madrid/">Madridista Real</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.marca.com/futbol/real-madrid.html?intcmp=MENUESCU&s_kw=realmadrid">Diario MARCA - Real Madrid</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.sport.es/es/real-madrid/">Diario SPORT - Real Madrid</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.estadiodeportivo.com/futbol/real-madrid/">Estadio Deportivo - Real Madrid</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card">
+                <div class="card-header">
+                    <span>Real Madrid Fem.</span>
+                    <span class="badge">4</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.realmadrid.com/es-ES/futbol/primer-equipo-femenino/inicio">Real Madrid Fem. Oficial</a></li>
+                    <li><a class="link-item" target="_blank" href="https://as.com/noticias/real-madrid-femenino/?omnil=mod_esc">Diario AS - Femenino</a></li>
+                    <li><a class="link-item" target="_blank" href="https://madridistareal.com/real-madrid-femenino/">Madridista Real - Femenino</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.marca.com/futbol/futbol-femenino/primera-division.html?intcmp=MENUPROD&s_kw=futbol-femenino-liga-f">Diario MARCA - Liga F</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card">
+                <div class="card-header">
+                    <span>LaLiga EA Sports</span>
+                    <span class="badge">8</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.laliga.com/laliga-easports">LaLiga Web Oficial</a></li>
+                    <li><a class="link-item" target="_blank" href="https://as.com/futbol/primera/">Diario AS - Primera División</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.marca.com/futbol/primera-division.html?intcmp=MENUMIGA&s_kw=laliga-ea-sports">Diario MARCA - LaLiga</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.mundodeportivo.com/futbol/laliga">Mundo Deportivo - LaLiga</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.sport.es/es/laliga/">Diario SPORT - LaLiga</a></li>
+                    <li><a class="link-item" target="_blank" href="https://defensacentral.com/">Defensa Central Inicio</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.estadiodeportivo.com/futbol/">Estadio Deportivo Fútbol</a></li>
+                    <li><a class="link-item" target="_blank" href="https://meridiano.net/futbol/espanol">Meridiano - Fútbol Español</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card">
+                <div class="card-header">
+                    <span>Selección España</span>
+                    <span class="badge">2</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.marca.com/futbol/seleccion.html?intcmp=MENUMIGA&s_kw=seleccion-espanola">Diario MARCA - Selección</a></li>
+                    <li><a class="link-item" target="_blank" href="https://as.com/futbol/seleccion/">Diario AS - Selección España</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card">
+                <div class="card-header">
+                    <span>Selección España Fem.</span>
+                    <span class="badge">3</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.marca.com/futbol/futbol-femenino.html?intcmp=MENUMIGA&s_kw=futbol-femenino">Diario MARCA - Fem</a></li>
+                    <li><a class="link-item" target="_blank" href="https://as.com/futbol/femenino/">Diario AS - Fútbol Femenino</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.mundodeportivo.com/futbol/femenino">Mundo Deportivo - Femenino</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card section-venezuela">
+                <div class="card-header" style="border-bottom-color: var(--gold);">
+                    <span style="color: var(--gold); font-weight: 800;">🇻🇪 LA VINOTINTO</span>
+                    <span class="badge" style="background-color: var(--vinotinto-light);">6</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" style="font-weight: 600;" target="_blank" href="https://www.fvf.com.ve/">FVF - Federación Venezolana</a></li>
+                    <li><a class="link-item" target="_blank" href="https://meridiano.net/futbol/la-vinotinto">Meridiano - La Vinotinto</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.liderendeportes.com/seccion/vinotinto/">Líder en Deportes - Vinotinto</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.lavinotinto.com/category/futbol-nacional/la-vinotinto/">LaVinotinto.com - Selección</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.balonazos.com/category/noticias/futbol-vinotinto/">Balonazos - Fútbol Vinotinto</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.lavinotinto.com/category/futbol-nacional/fvf/">LaVinotinto.com - FVF</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card section-venezuela">
+                <div class="card-header">
+                    <span>Liga FUTVE 🇻🇪</span>
+                    <span class="badge">4</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://meridiano.net/futbol/futbol-venezolano">Meridiano - Fútbol Venezolano</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.liderendeportes.com/seccion/futbol/futve/">Líder en Deportes - Liga FUTVE</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.lavinotinto.com/category/futbol-nacional/primera-division/">LaVinotinto.com - Primera División</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.balonazos.com/category/noticias/1ra-division/">Balonazos - 1ra División</a></li>
+                </ul>
+            </div>
+
+            <div class="section-card section-venezuela">
+                <div class="card-header">
+                    <span>Venezuela Fem. 🇻🇪</span>
+                    <span class="badge">3</span>
+                </div>
+                <ul class="links-list">
+                    <li><a class="link-item" target="_blank" href="https://www.liderendeportes.com/seccion/futbol/femenino/">Líder en Deportes - Femenino</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.lavinotinto.com/category/futbol-nacional/futbol-femenino/">LaVinotinto.com - Femenino</a></li>
+                    <li><a class="link-item" target="_blank" href="https://www.balonazos.com/category/noticias/femenino/">Balonazos - Femenino</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <footer>
+        Generado para Vinotinto Galáctico &copy; 2026. Todos los accesos directos configurados en pestaña nueva.
+    </footer>
+
+</body>
+</html>
