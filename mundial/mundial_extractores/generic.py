@@ -16,7 +16,7 @@ from mundial.mundial_core.content_filter import is_valid_content
 logger = logging.getLogger(__name__)
 
 MAX_NEWS = 3
-TIMEOUT_MS = 20_000
+TIMEOUT_MS = 45_000
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -61,6 +61,15 @@ class GenericExtractor:
                     viewport={"width": 1280, "height": 900},
                     ignore_https_errors=True,
                 )
+
+                async def intercept(route):
+                    if route.request.resource_type in ["image", "media", "font"]:
+                        await route.abort()
+                    else:
+                        await route.continue_()
+                
+                await context.route("**/*", intercept)
+
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
                 await page.wait_for_timeout(2000)  # breve espera para JS
