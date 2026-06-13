@@ -1,78 +1,92 @@
 import streamlit as st
-import pandas as pd
 import os
-from utils.excel_reader import ExcelReader
-from utils.news_extractor import NewsExtractor
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+
+# IMPORTANTE: Usamos 'core' porque así se llama tu carpeta en GitHub
+try:
+    from core.excel_reader import ExcelReader
+except ImportError:
+    st.error("No se pudo cargar 'core.excel_reader'. Asegúrate de que la carpeta 'core' existe.")
 
 # Configuración de la página
-st.set_page_config(page_title="BG Extractor - News", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="BG Extractor Pro", page_icon="⚽", layout="wide")
 
-# --- BARRA LATERAL (SIDEBAR) ---
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/a/a4/FIFA_World_Cup_2026_Logo.png", width=100)
-st.sidebar.title("Configuración de Extracción")
+# Función de extracción propia para asegurar que funcione sin dependencias externas
+def extraer_contenido(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.encoding = 'utf-8'
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Intentar obtener el título
+        titulo = soup.find('h1').text.strip() if soup.find('h1') else "Noticia del día"
+        
+        # Intentar obtener el texto (párrafos)
+        parrafos = soup.find_all('p')
+        cuerpo = "\n\n".join([p.text.strip() for p in parrafos if len(p.text.strip()) > 60])
+        
+        return {"titulo": titulo, "contenido": cuerpo}
+    except Exception as e:
+        return {"error": str(e)}
 
-# AQUÍ ELIGES QUÉ BASE DE DATOS USAR
-opcion_base = st.sidebar.selectbox(
-    "Seleccione el modo de trabajo:",
-    ["Vinotinto Galáctico (Fútbol)", "Mundial 2026"]
+# --- BARRA LATERAL ---
+st.sidebar.title("⚽ Configuración")
+
+modo = st.sidebar.selectbox(
+    "Seleccione el Proyecto:",
+    ["Vinotinto Galáctico", "Mundial 2026"]
 )
 
-# Definir la ruta del archivo según la opción seleccionada
-if opcion_base == "Vinotinto Galáctico (Fútbol)":
-    archivo_excel = "data/Prensa_Deportiva.xlsx"
-    color_titulo = "#7B1630"  # Color Vinotinto
+# Definir la ruta del Excel según el modo
+if modo == "Vinotinto Galáctico":
+    # Tu archivo original tiene un espacio: "Prensa Deportiva.xlsx"
+    excel_path = "data/Prensa Deportiva.xlsx"
+    color_app = "#7B1630"
 else:
-    archivo_excel = "data/Prensa_Mundial.xlsx"
-    color_titulo = "#1d4ed8"  # Color Azul Mundial
+    # Tu nuevo archivo
+    excel_path = "data/Prensa_Mundial.xlsx"
+    color_app = "#1d4ed8"
 
-st.sidebar.markdown(f"**Base de datos activa:** \n`{archivo_excel}`")
+st.sidebar.info(f"Usando base de datos: {excel_path}")
 
 # --- CUERPO PRINCIPAL ---
-st.markdown(f"<h1 style='text-align: center; color: {color_titulo};'>{opcion_base}</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center;'>Extractor de noticias automático para YouTube</p>", unsafe_allow_html=True)
+st.markdown(f"<h1 style='text-align: center; color: {color_app};'>{modo}</h1>", unsafe_allow_html=True)
 
-# Verificar si el archivo existe antes de continuar
-if not os.path.exists(archivo_excel):
-    st.error(f"⚠️ Error: No se encuentra el archivo {archivo_excel} en la carpeta 'data/'. Por favor súbelo a GitHub.")
+if not os.path.exists(excel_path):
+    st.error(f"⚠️ El archivo no existe en la carpeta data: {excel_path}")
+    st.info("Por favor, sube el archivo Excel a la carpeta 'data' en tu GitHub.")
 else:
     try:
-        # Cargar los datos del Excel
-        reader = ExcelReader(archivo_excel)
+        # Cargamos el lector de tu carpeta 'core'
+        reader = ExcelReader(excel_path)
         categorias = reader.get_categories()
 
         col1, col2 = st.columns([1, 2])
 
         with col1:
-            st.subheader("1. Selección")
-            categoria_seleccionada = st.selectbox("Seleccione una categoría/sección:", categorias)
-            
-            links = reader.get_links_by_category(categoria_seleccionada)
-            link_seleccionado = st.selectbox("Seleccione la noticia:", links)
+            st.subheader("Selección")
+            seccion = st.selectbox("Categoría:", categorias)
+            links = reader.get_links_by_category(seccion)
+            link_final = st.selectbox("Noticia:", links)
 
         with col2:
-            st.subheader("2. Resultado de Extracción")
-            
-            if st.button("🚀 Extraer Noticia"):
-                with st.spinner('Extrayendo contenido...'):
-                    extractor = NewsExtractor(link_seleccionado)
-                    resultado = extractor.extract()
-
+            st.subheader("Resultado")
+            if st.button("🚀 EXTRAER NOTICIA"):
+                with st.spinner('Extrayendo...'):
+                    resultado = extraer_contenido(link_final)
+                    
                     if "error" in resultado:
-                        st.error(f"No se pudo extraer la noticia: {resultado['error']}")
+                        st.error(f"Error: {resultado['error']}")
                     else:
-                        # Título de la noticia
-                        st.markdown(f"### {resultado['titulo']}")
-                        
-                        # Contenido formateado para leer fácil
-                        st.text_area("Contenido Extraído:", value=resultado['contenido'], height=400)
-                        
-                        # Botón para copiar (ayuda visual)
-                        st.success("✅ ¡Noticia extraída con éxito!")
-                        st.info("Copia el texto de arriba para tu guion de YouTube.")
+                        st.text_input("Título:", value=resultado['titulo'])
+                        st.text_area("Contenido:", value=resultado['contenido'], height=400)
+                        st.success("✅ ¡Listo para copiar!")
 
     except Exception as e:
-        st.error(f"Ocurrió un error inesperado: {e}")
+        st.error(f"Error al leer el Excel: {e}")
 
-# Pie de página
 st.markdown("---")
-st.markdown(f"<p style='text-align: center; color: gray;'>BG Extractor - Modo: {opcion_base}</p>", unsafe_allow_html=True)
+st.caption("BG Extractor - Sistema Multi-Base")
