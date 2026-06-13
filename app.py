@@ -1,27 +1,24 @@
 """
-VINOTINTO GALÁCTICO NEWS EXTRACTOR v3.0
-Versión estable - Tabs: Panel Prensa | Vinotinto | Mundial
+VINOTINTO GALÁCTICO NEWS EXTRACTOR v4.0
+Orden correcto + Botones funcionales + Sin errores
 """
 import os
 import sys
 import time
+from pathlib import Path
+os.environ['TZ'] = 'America/Caracas'
+if hasattr(time, 'tzset'):
+    time.tzset()
+
 import asyncio
 import base64
 import logging
-import uuid
-from pathlib import Path
 from datetime import datetime
-
 import streamlit as st
 
 # ═════════════════════════════════════════════════════════════════════════════
 # CONFIGURACIÓN INICIAL
 # ═════════════════════════════════════════════════════════════════════════════
-os.environ['TZ'] = 'America/Caracas'
-if hasattr(time, 'tzset'):
-    time.tzset()
-
-# RUTA BASE ABSOLUTA (CRÍTICO PARA LA NUBE)
 BASE_DIR = Path(__file__).parent.resolve()
 OUTPUT_DIR = BASE_DIR / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -30,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # ═════════════════════════════════════════════════════════════════════════════
-# IMPORTACIONES DEL PROYECTO
+# IMPORTACIONES
 # ═════════════════════════════════════════════════════════════════════════════
 try:
     from core.excel_reader import load_sources_vinotinto, load_sources_mundial
@@ -38,11 +35,11 @@ try:
     from core.html_exporter import export_html
     from extractores.factory import get_extractor
 except ImportError as e:
-    st.error(f"❌ Error importando módulos del proyecto: {e}")
+    st.error(f"❌ Error importando módulos: {e}")
     st.stop()
 
 # ═════════════════════════════════════════════════════════════════════════════
-# CONFIG DE PÁGINA
+# CONFIG DE PÁGINA - SIN SIDEBAR
 # ═════════════════════════════════════════════════════════════════════════════
 st.set_page_config(
     page_title="VG Extractor | Vinotinto + Mundial",
@@ -51,12 +48,26 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ═════════════════════════════════════════════════════════════════════════════
+# ORDEN EXACTO DE CATEGORÍAS (SEGÚN EL EXCEL)
+# ═════════════════════════════════════════════════════════════════════════════
+CATEGORY_ORDER = [
+    "Real Madrid Masculino",
+    "Real Madrid Femenino", 
+    "LaLiga",
+    "Selección Española Masculina",
+    "Selección Española Femenina",
+    "Vinotinto Masculina",
+    "Liga FUTVE",
+    "Vinotinto Femenina"
+]
+
 CATEGORY_ICONS = {
     "Real Madrid Masculino": "👑",
     "Real Madrid Femenino": "👑",
     "LaLiga": "🇪🇸",
     "Selección Española Masculina": "🇪🇸",
-    "Selección Española Femenina": "🇪🇸",
+    "Selección Española Femenina": "🇪",
     "Vinotinto Masculina": "🇻🇪",
     "Vinotinto Femenina": "🇻🇪",
     "Liga FUTVE": "🇻🇪",
@@ -75,9 +86,6 @@ st.markdown("""
     border-bottom: 3px solid #c0392b;
     padding: 1rem 1.5rem;
     margin: 0 -1rem 1.5rem -1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
 }
 .vg-titlebar h1 {
     font-family: 'Bebas Neue', sans-serif;
@@ -97,6 +105,15 @@ st.markdown("""
 .stButton>button:hover {
     background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
+.category-header {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: #c0392b;
+    margin: 1rem 0 0.5rem 0;
+    padding-bottom: 0.3rem;
+    border-bottom: 2px solid #2a2a2a;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -115,19 +132,10 @@ def _b64(path: Path) -> str:
 banner_b64 = _b64(BASE_DIR / "banner-vinotinto.png")
 
 # ═════════════════════════════════════════════════════════════════════════════
-# TABS PRINCIPALES
-# ═════════════════════════════════════════════════════════════════════════════
-tab_panel, tab_vinotinto, tab_mundial = st.tabs([
-    "📰 PANEL DE PRENSA",
-    "🔴 VINOTINTO GALÁCTICO",
-    "🌍 MUNDIAL 2026"
-])
-
-# ═════════════════════════════════════════════════════════════════════════════
-# FUNCIÓN GENÉRICA DE EXTRACCIÓN
+# FUNCIÓN DE EXTRACCIÓN
 # ═════════════════════════════════════════════════════════════════════════════
 def run_extraction(urls_to_extract, output_prefix):
-    """Ejecuta la extracción de noticias de forma asíncrona"""
+    """Ejecuta la extracción de noticias"""
     if not urls_to_extract:
         st.warning("⚠️ Selecciona al menos una fuente")
         return
@@ -157,7 +165,7 @@ def run_extraction(urls_to_extract, output_prefix):
         try:
             asyncio.run(extract_all())
         except Exception as e:
-            st.error(f"❌ Error fatal en extracción: {e}")
+            st.error(f"❌ Error fatal: {e}")
             logger.exception(e)
             return
 
@@ -177,9 +185,8 @@ def run_extraction(urls_to_extract, output_prefix):
             with open(html_path, "rb") as f:
                 st.download_button("📥 Descargar HTML", f, file_name=f"{output_prefix}.html", key=f"dl_html_{output_prefix}")
     else:
-        st.info("ℹ️ No se encontraron noticias del día en las fuentes seleccionadas")
+        st.info("ℹ️ No se encontraron noticias del día")
 
-    # Mostrar logs
     with st.expander("📊 Ver log detallado"):
         for log in logs:
             if "error" in log:
@@ -188,11 +195,20 @@ def run_extraction(urls_to_extract, output_prefix):
                 st.success(f"✅ {log.get('source', '?')}: {log.get('count', 0)} noticias")
 
 # ═════════════════════════════════════════════════════════════════════════════
+# TABS PRINCIPALES
+# ═════════════════════════════════════════════════════════════════════════════
+tab_panel, tab_vinotinto, tab_mundial = st.tabs([
+    "📰 PANEL DE PRENSA",
+    "🔴 VINOTINTO GALÁCTICO",
+    "🌍 MUNDIAL 2026"
+])
+
+# ═════════════════════════════════════════════════════════════════════════════
 # TAB 1: PANEL DE PRENSA
 # ═════════════════════════════════════════════════════════════════════════════
 with tab_panel:
     st.markdown('<div class="vg-titlebar"><h1>📰 PANEL DE PRENSA</h1></div>', unsafe_allow_html=True)
-    st.info("🔗 Accesos directos a todas las fuentes de prensa deportiva")
+    st.info("🔗 Accesos directos a todas las fuentes")
 
     html_path = BASE_DIR / "static" / "Prensa_Deportiva.html"
     if html_path.exists():
@@ -202,7 +218,7 @@ with tab_panel:
         except Exception as e:
             st.error(f"Error al leer HTML: {e}")
     else:
-        st.warning(f"⚠️ No se encontró `static/Prensa_Deportiva.html`. Crea la carpeta `static/` y copia el archivo ahí.")
+        st.warning("⚠️ No se encontró `static/Prensa_Deportiva.html`")
 
 # ═════════════════════════════════════════════════════════════════════════════
 # TAB 2: VINOTINTO GALÁCTICO
@@ -213,61 +229,85 @@ with tab_vinotinto:
     if banner_b64:
         st.markdown(f'<div style="text-align:center;"><img src="data:image/png;base64,{banner_b64}" style="max-width:100%; max-height:220px; border-radius:8px;"></div>', unsafe_allow_html=True)
 
+    # Cargar fuentes
     try:
-        sources_vinotinto = load_sources_vinotinto()
+        all_sources = load_sources_vinotinto()
     except Exception as e:
-        st.error(f"❌ Error al cargar Excel Vinotinto: {e}")
+        st.error(f"❌ Error al cargar Excel: {e}")
         logger.exception(e)
-        sources_vinotinto = {}
+        all_sources = {}
 
-    if sources_vinotinto:
-        st.markdown("### 📋 Selecciona las fuentes a extraer")
+    if all_sources:
+        st.markdown("### 📋 Selecciona las fuentes")
 
-        # Botones de selección rápida
-        col_sel1, col_sel2, col_sel3 = st.columns(3)
-        with col_sel1:
-            select_all_vg = st.button("✅ Seleccionar todo", key="sel_all_vg")
-        with col_sel2:
-            deselect_all_vg = st.button("❌ Deseleccionar todo", key="desel_all_vg")
-        with col_sel3:
-            total_f = sum(len(f) for f in sources_vinotinto.values())
-            st.info(f"📊 {len(sources_vinotinto)} categorías · {total_f} fuentes")
+        # Inicializar session state para checkboxes
+        if "vg_selection" not in st.session_state:
+            st.session_state.vg_selection = {}
 
-        # Inicializar session state
-        if "vg_checks" not in st.session_state:
-            st.session_state.vg_checks = {}
+        # Botones globales
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+        with col_btn1:
+            if st.button("✅ Seleccionar TODAS", key="sel_all_global"):
+                for cat in CATEGORY_ORDER:
+                    if cat in all_sources:
+                        for nombre, url in all_sources[cat]:
+                            st.session_state.vg_selection[f"vg_{cat}_{nombre}"] = True
+                st.rerun()
+        with col_btn2:
+            if st.button("❌ Deseleccionar TODAS", key="desel_all_global"):
+                st.session_state.vg_selection = {}
+                st.rerun()
+        with col_btn3:
+            total = sum(len(f) for f in all_sources.values())
+            st.info(f"📊 {len(all_sources)} categorías · {total} fuentes")
 
-        # Aplicar selección/deselección masiva
-        if select_all_vg:
-            for cat, fuentes in sources_vinotinto.items():
-                for nombre, url in fuentes:
-                    st.session_state.vg_checks[f"vg_{cat}_{nombre}"] = True
-            st.rerun()
-        if deselect_all_vg:
-            st.session_state.vg_checks = {}
-            st.rerun()
+        st.markdown("---")
 
-        selected_vinotinto = {}
-        for categoria, fuentes in sorted(sources_vinotinto.items()):
+        # Mostrar categorías EN ORDEN
+        selected_sources = {}
+        for categoria in CATEGORY_ORDER:
+            if categoria not in all_sources:
+                continue
+                
+            fuentes = all_sources[categoria]
             icon = CATEGORY_ICONS.get(categoria, "📰")
-            with st.expander(f"{icon} **{categoria}** ({len(fuentes)} fuentes)", expanded=False):
-                selected_vinotinto[categoria] = {}
-                cols = st.columns(2)
-                for idx, (nombre, url) in enumerate(fuentes):
-                    with cols[idx % 2]:
-                        check_key = f"vg_{categoria}_{nombre}"
-                        checked = st.checkbox(
-                            f"{nombre}",
-                            key=check_key,
-                            value=st.session_state.vg_checks.get(check_key, False)
-                        )
-                        if checked:
-                            selected_vinotinto[categoria][nombre] = url
+            
+            st.markdown(f'<div class="category-header">{icon} {categoria.upper()} ({len(fuentes)} fuentes)</div>', unsafe_allow_html=True)
+            
+            # Botones por categoría
+            col_sel1, col_sel2 = st.columns(2)
+            with col_sel1:
+                if st.button(f"✅ Todas", key=f"sel_{categoria}"):
+                    for nombre, url in fuentes:
+                        st.session_state.vg_selection[f"vg_{categoria}_{nombre}"] = True
+                    st.rerun()
+            with col_sel2:
+                if st.button(f"❌ Ninguna", key=f"desel_{categoria}"):
+                    for nombre, url in fuentes:
+                        st.session_state.vg_selection[f"vg_{categoria}_{nombre}"] = False
+                    st.rerun()
 
+            # Checkboxes en 2 columnas
+            cols = st.columns(2)
+            selected_sources[categoria] = {}
+            for idx, (nombre, url) in enumerate(fuentes):
+                with cols[idx % 2]:
+                    check_key = f"vg_{categoria}_{nombre}"
+                    checked = st.checkbox(
+                        f"{nombre}",
+                        key=check_key,
+                        value=st.session_state.vg_selection.get(check_key, False)
+                    )
+                    if checked:
+                        selected_sources[categoria][nombre] = url
+
+            st.markdown("")  # Espacio
+
+        # Botón de extracción
         st.markdown("---")
         if st.button("⚡ EXTRAER NOTICIAS VINOTINTO", key="btn_vg", use_container_width=True, type="primary"):
             urls_to_extract = []
-            for cat, nombres_urls in selected_vinotinto.items():
+            for cat, nombres_urls in selected_sources.items():
                 for nombre, url in nombres_urls.items():
                     urls_to_extract.append((nombre, url, cat))
             run_extraction(urls_to_extract, "noticias_vinotinto")
@@ -279,55 +319,72 @@ with tab_vinotinto:
 # ═════════════════════════════════════════════════════════════════════════════
 with tab_mundial:
     st.markdown('<div class="vg-titlebar"><h1>🌍 MUNDIAL 2026</h1></div>', unsafe_allow_html=True)
-    st.warning("⚠️ Contenido temporal disponible hasta el **19 de Julio de 2026**")
+    st.warning("⚠️ Contenido temporal hasta el **19 de Julio de 2026**")
 
     try:
         sources_mundial = load_sources_mundial()
     except Exception as e:
-        st.error(f"❌ Error al cargar Excel Mundial: {e}")
+        st.error(f"❌ Error al cargar Excel: {e}")
         logger.exception(e)
         sources_mundial = {}
 
     if sources_mundial:
         st.markdown("### 📋 Fuentes del Mundial")
 
-        col_sel1, col_sel2, col_sel3 = st.columns(3)
-        with col_sel1:
-            select_all_m = st.button("✅ Seleccionar todo", key="sel_all_m")
-        with col_sel2:
-            deselect_all_m = st.button("❌ Deseleccionar todo", key="desel_all_m")
-        with col_sel3:
-            total_m = sum(len(f) for f in sources_mundial.values())
-            st.info(f"🏆 {total_m} fuentes disponibles")
+        if "mundial_selection" not in st.session_state:
+            st.session_state.mundial_selection = {}
 
-        if "mundial_checks" not in st.session_state:
-            st.session_state.mundial_checks = {}
+        # Botones globales
+        col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 2])
+        with col_btn1:
+            if st.button("✅ Seleccionar TODAS", key="sel_all_mundial"):
+                for cat, fuentes in sources_mundial.items():
+                    for nombre, url in fuentes:
+                        st.session_state.mundial_selection[f"mundial_{cat}_{nombre}"] = True
+                st.rerun()
+        with col_btn2:
+            if st.button("❌ Deseleccionar TODAS", key="desel_all_mundial"):
+                st.session_state.mundial_selection = {}
+                st.rerun()
+        with col_btn3:
+            total = sum(len(f) for f in sources_mundial.values())
+            st.info(f"🏆 {total} fuentes")
 
-        if select_all_m:
-            for cat, fuentes in sources_mundial.items():
-                for nombre, url in fuentes:
-                    st.session_state.mundial_checks[f"mundial_{cat}_{nombre}"] = True
-            st.rerun()
-        if deselect_all_m:
-            st.session_state.mundial_checks = {}
-            st.rerun()
+        st.markdown("---")
 
         selected_mundial = {}
         for categoria, fuentes in sources_mundial.items():
             icon = CATEGORY_ICONS.get(categoria, "🌍")
-            with st.expander(f"{icon} **{categoria}** ({len(fuentes)} fuentes)", expanded=True):
-                selected_mundial[categoria] = {}
-                cols = st.columns(3)
-                for idx, (nombre, url) in enumerate(fuentes):
-                    with cols[idx % 3]:
-                        check_key = f"mundial_{categoria}_{nombre}"
-                        checked = st.checkbox(
-                            f"{nombre}",
-                            key=check_key,
-                            value=st.session_state.mundial_checks.get(check_key, False)
-                        )
-                        if checked:
-                            selected_mundial[categoria][nombre] = url
+            st.markdown(f'<div class="category-header">{icon} {categoria.upper()} ({len(fuentes)} fuentes)</div>', unsafe_allow_html=True)
+            
+            # Botones por categoría
+            col_sel1, col_sel2 = st.columns(2)
+            with col_sel1:
+                if st.button(f"✅ Todas", key=f"sel_mundial_{categoria}"):
+                    for nombre, url in fuentes:
+                        st.session_state.mundial_selection[f"mundial_{categoria}_{nombre}"] = True
+                    st.rerun()
+            with col_sel2:
+                if st.button(f"❌ Ninguna", key=f"desel_mundial_{categoria}"):
+                    for nombre, url in fuentes:
+                        st.session_state.mundial_selection[f"mundial_{categoria}_{nombre}"] = False
+                    st.rerun()
+
+            # Checkboxes en 3 columnas
+            cols = st.columns(3)
+            selected_mundial[categoria] = {}
+            for idx, (nombre, url) in enumerate(fuentes):
+                with cols[idx % 3]:
+                    check_key = f"mundial_{categoria}_{nombre}"
+                    checked = st.checkbox(
+                        f"{nombre}",
+                        key=check_key,
+                        value=st.session_state.mundial_selection.get(check_key, False)
+                    )
+                    if checked:
+                        selected_mundial[categoria][nombre] = url
+
+            st.markdown("")
 
         st.markdown("---")
         if st.button("⚡ EXTRAER NOTICIAS MUNDIAL", key="btn_mundial", use_container_width=True, type="primary"):
@@ -337,10 +394,10 @@ with tab_mundial:
                     urls_to_extract.append((nombre, url, cat))
             run_extraction(urls_to_extract, "noticias_mundial")
     else:
-        st.error("❌ No se cargaron fuentes. Verifica `data/Prensa_Mundial_2026_ListaEnlaces.xlsx`")
+        st.error("❌ No se cargaron fuentes del Mundial")
 
 # ═════════════════════════════════════════════════════════════════════════════
 # FOOTER
 # ═════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
-st.markdown('<div style="text-align:center; color:#888; font-size:0.85em;">⚽ Vinotinto Galáctico News Extractor v3.0 · Estable</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; color:#888; font-size:0.85em;">⚽ Vinotinto Galáctico News Extractor v4.0</div>', unsafe_allow_html=True)
