@@ -1,20 +1,31 @@
 import streamlit as st
 import os
+import sys
 from datetime import datetime
-# Mantenemos tus importaciones originales exactas
-from core.excel_reader import ExcelReader
-from core.news_extractor import NewsExtractor
 
-# 1. CONFIGURACIÓN E IDENTIDAD VISUAL (Tu Banner y Logo originales)
+# FIX: Esto asegura que Streamlit encuentre tus clases en la carpeta 'core'
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+try:
+    from core.excel_reader import ExcelReader
+    from core.news_extractor import NewsExtractor
+except ImportError:
+    st.error("Error crítico: No se encuentran las clases en 'core/'. Revisa que los archivos existan.")
+
+# 1. IDENTIDAD VISUAL ORIGINAL
 st.set_page_config(page_title="BG Extractor News", page_icon="⚽", layout="wide")
 
 if os.path.exists("banner-vinotinto.png"):
     st.image("banner-vinotinto.png", use_container_width=True)
 
-# 2. SELECTOR DE PROYECTO (Único cambio para no romper nada)
+if os.path.exists("Logo.jpg"):
+    st.sidebar.image("Logo.jpg", width=120)
+
+# 2. SELECTOR DE PROYECTO Y FILTROS ORIGINALES
 st.sidebar.title("⚽ Configuración")
 proyecto = st.sidebar.radio("Seleccione el Proyecto:", ["Vinotinto Galáctico", "Mundial 2026"])
 
+# Selección de base de datos
 if proyecto == "Vinotinto Galáctico":
     excel_path = "data/Prensa Deportiva.xlsx"
     color_tit = "#7B1630"
@@ -22,55 +33,67 @@ else:
     excel_path = "data/Prensa_Mundial.xlsx"
     color_tit = "#1d4ed8"
 
+# FILTRO DE FECHA (Tu filtro original para no extraer noticias viejas)
+st.sidebar.markdown("---")
+fecha_limite = st.sidebar.date_input("Extraer noticias desde el día:", datetime.now())
+
 st.markdown(f"<h1 style='text-align: center; color: {color_tit};'>{proyecto}</h1>", unsafe_allow_html=True)
 
-# 3. LÓGICA ORIGINAL DE EXTRACCIÓN (Checkboxes y Filtros)
+# 3. MOTOR DE EXTRACCIÓN MASIVA (Checkboxes y Selección por Categoría)
 if not os.path.exists(excel_path):
-    st.error(f"No se encuentra el archivo {excel_path}")
+    st.error(f"⚠️ No encuentro el archivo {excel_path}")
 else:
+    # Usamos tu Lector de Excel original
     reader = ExcelReader(excel_path)
     categorias = reader.get_categories()
-    
-    # Filtro de fecha (Como lo tenías originalmente)
-    fecha_filtro = st.sidebar.date_input("Filtrar noticias desde:", datetime.now())
 
-    st.subheader("📁 Selección Masiva de Noticias")
+    st.subheader("📁 Panel de Selección Masiva")
     
-    # Aquí restauramos tu lógica de selección por secciones
-    seleccion_seccion = st.multiselect("Seleccione las secciones a extraer:", categorias)
+    # Selección de categorías (Multiselect como lo tenías)
+    secciones_sel = st.multiselect("Seleccione las secciones para buscar noticias:", categorias)
     
-    todos_los_links = []
-    if seleccion_seccion:
-        for cat in seleccion_seccion:
-            links = reader.get_links_by_category(cat)
-            todos_los_links.extend(links)
+    if secciones_sel:
+        links_totales = []
+        for cat in secciones_sel:
+            links_totales.extend(reader.get_links_by_category(cat))
         
-        st.write(f"Total de noticias encontradas en estas secciones: {len(todos_los_links)}")
+        st.write(f"🔍 Se encontraron **{len(links_totales)}** enlaces en las secciones seleccionadas.")
         
-        # Checkboxes para selección individual (Tu automatización original)
-        links_seleccionados = []
+        # LISTA DE CHECKBOXES (Para que elijas qué extraer y qué no)
+        st.markdown("### Seleccione las noticias individuales:")
+        links_finales = []
+        
+        # Dividimos en 2 columnas para que sea vea ordenado como tu programa original
         col1, col2 = st.columns(2)
-        for i, link in enumerate(todos_los_links):
+        for i, link in enumerate(links_totales):
             with (col1 if i % 2 == 0 else col2):
-                if st.checkbox(f"Noticia {i+1}: {link[:60]}...", value=True, key=f"link_{i}"):
-                    links_seleccionados.append(link)
+                # Checkbox por cada link
+                if st.checkbox(f"Noticia {i+1}: {link[:65]}...", value=True, key=f"chk_{i}"):
+                    links_finales.append(link)
 
-        if st.button("🚀 INICIAR EXTRACCIÓN AUTOMÁTICA"):
-            extractor = NewsExtractor() # Tu clase original
-            progreso = st.progress(0)
+        # 4. BOTÓN DE EXTRACCIÓN AUTOMATIZADA
+        st.markdown("---")
+        if st.button(f"🚀 INICIAR EXTRACCIÓN DE {len(links_finales)} NOTICIAS"):
+            # Usamos tu Extractor original (que ya tiene los filtros de AS, Marca, etc.)
+            extractor = NewsExtractor() 
+            bar = st.progress(0)
             
-            for idx, link in enumerate(links_seleccionados):
-                with st.expander(f"Extrayendo: {link}"):
-                    # Aquí el extractor usará tus scripts de 'extractores/' (AS, Marca, etc.)
-                    resultado = extractor.extract(link)
+            for idx, url in enumerate(links_finales):
+                with st.expander(f"Extrayendo: {url}", expanded=True):
+                    # Aquí el programa usa tus scripts de la carpeta 'extractors/'
+                    resultado = extractor.extract(url)
                     
                     if "error" not in resultado:
+                        # Verificación de fecha si tu extractor lo permite
                         st.subheader(resultado.get('titulo', 'Sin Título'))
                         st.write(resultado.get('contenido', 'Sin Contenido'))
-                        st.markdown("---")
                     else:
-                        st.error(f"No se pudo extraer de este sitio: {link}")
+                        st.error(f"Error en este link: {resultado['error']}")
                 
-                progreso.progress((idx + 1) / len(links_seleccionados))
+                bar.progress((idx + 1) / len(links_finales))
             
-            st.success(f"Proceso finalizado. {len(links_seleccionados)} noticias procesadas.")
+            st.success("✅ Proceso masivo completado.")
+
+# PIE DE PÁGINA
+st.markdown("---")
+st.caption("Sistema BG Extractor Pro - Vinotinto Galáctico")
