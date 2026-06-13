@@ -125,11 +125,11 @@ st.markdown("""
 
 # ── CARGAR FUENTES ────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
-def _load_sources():
+def _load_sources_mundial():
     return load_sources()
 
 try:
-    sources = _load_sources()
+    sources = _load_sources_mundial()
     excel_ok = True
 except Exception as exc:
     sources = {}

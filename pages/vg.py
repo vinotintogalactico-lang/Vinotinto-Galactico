@@ -160,11 +160,11 @@ if banner_html:
 
 # ── CARGA DE FUENTES (necesaria antes del sidebar y del botón) ────────────────
 @st.cache_data(show_spinner=False)
-def _load_sources():
+def _load_sources_vg():
     return load_sources()
 
 try:
-    sources = _load_sources()
+    sources = _load_sources_vg()
     excel_ok = True
 except Exception as exc:
     sources = {}
