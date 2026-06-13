@@ -1,5 +1,5 @@
 """
-Exportador a HTML
+Exportador a HTML - Noticias completas
 """
 from datetime import datetime
 
@@ -20,7 +20,7 @@ def export_html(noticias: list, output_path: str):
             padding: 2rem;
         }}
         .container {{
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
         }}
         .header {{
@@ -39,31 +39,34 @@ def export_html(noticias: list, output_path: str):
         .news-item {{
             background: #1a1a1a;
             border-left: 4px solid #c0392b;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
             border-radius: 4px;
         }}
         .news-meta {{
             font-size: 0.85rem;
             color: #888;
-            margin-bottom: 0.5rem;
+            margin-bottom: 1rem;
         }}
         .news-cat {{
             color: #c0392b;
             font-weight: 600;
         }}
         .news-title {{
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             color: #fff;
-            margin: 0.5rem 0;
+            margin: 0.5rem 0 1rem 0;
         }}
         .news-body {{
-            color: #c8c8c8;
-            line-height: 1.6;
+            color: #d0d0d0;
+            line-height: 1.8;
+            text-align: justify;
         }}
         .news-url {{
             color: #3498db;
             text-decoration: none;
+            display: inline-block;
+            margin-top: 1rem;
         }}
         .news-url:hover {{
             text-decoration: underline;
