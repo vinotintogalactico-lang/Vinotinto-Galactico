@@ -53,41 +53,61 @@ class GenericExtractor:
             "error": "",
         }
 
+        browser = None
         try:
             async with async_playwright() as pw:
-                browser: Browser = await pw.chromium.launch(headless=True)
-                context: BrowserContext = await browser.new_context(
-                    user_agent=USER_AGENT,
-                    viewport={"width": 1280, "height": 900},
-                    ignore_https_errors=True,
+                # OPTIMIZACIÓN CLAVE: Argumentos para no saturar la RAM en Streamlit Cloud
+                browser = await pw.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--disable-dev-shm-usage",
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-gpu",
+                        "--single-process"
+                    ]
                 )
-                page: Page = await context.new_page()
-                await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
-                await page.wait_for_timeout(2000)  # breve espera para JS
-
-                links = await self._get_article_links(page)
-                log["encontradas"] = len(links)
-
-                for link in links:
-                    if len(noticias) >= MAX_NEWS:
-                        break
+                
+                try:
+                    context: BrowserContext = await browser.new_context(
+                        user_agent=USER_AGENT,
+                        viewport={"width": 1280, "height": 900},
+                        ignore_https_errors=True,
+                    )
+                    page: Page = await context.new_page()
+                    
                     try:
-                        articulo = await self._extract_article(context, link)
-                        if articulo:
-                            # 1. Filtro estricto por palabras clave y cuerpo
-                            if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
-                                continue
-                            
-                            # 2. Filtro estricto de fecha
-                            valid_date, _log = is_today(articulo.get("date", ""))
-                            if valid_date:
-                                articulo["fuente"] = self.fuente
-                                articulo["categoria"] = self.categoria
-                                noticias.append(articulo)
-                    except Exception as exc:
-                        logger.warning("Error en artículo %s: %s", link, exc)
+                        await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
+                        await page.wait_for_timeout(2000)  # breve espera para JS
+                    except Exception as goto_exc:
+                        raise Exception(f"No se pudo cargar la página principal (Timeout o Bloqueo): {goto_exc}")
 
-                await browser.close()
+                    links = await self._get_article_links(page)
+                    log["encontradas"] = len(links)
+
+                    for link in links:
+                        if len(noticias) >= MAX_NEWS:
+                            break
+                        try:
+                            articulo = await self._extract_article(context, link)
+                            if articulo:
+                                # 1. Filtro estricto por palabras clave y cuerpo
+                                if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
+                                    continue
+                                
+                                # 2. Filtro estricto de fecha
+                                valid_date, _log = is_today(articulo.get("date", ""))
+                                if valid_date:
+                                    articulo["fuente"] = self.fuente
+                                    articulo["categoria"] = self.categoria
+                                    noticias.append(articulo)
+                        except Exception as exc:
+                            logger.warning("Error en artículo %s: %s", link, exc)
+
+                finally:
+                    # BLOQUEO DE SEGURIDAD: Garantiza que la RAM se limpie sin importar el error
+                    if browser:
+                        await browser.close()
 
         except Exception as exc:
             log["error"] = str(exc)
