@@ -40,7 +40,7 @@ class GenericExtractor:
         self.categoria = categoria
 
     # ── Punto de entrada ────────────────────────────────────────────────────
-    async def extract(self) -> tuple[list[dict], dict]:
+    async def extract(self, existing_browser: Browser = None) -> tuple[list[dict], dict]:
         """
         Devuelve (lista_noticias, log_entry).
         """
@@ -53,14 +53,12 @@ class GenericExtractor:
             "error": "",
         }
 
-        try:
-            async with async_playwright() as pw:
-                browser: Browser = await pw.chromium.launch(headless=True)
-                context: BrowserContext = await browser.new_context(
-                    user_agent=USER_AGENT,
-                    viewport={"width": 1280, "height": 900},
-                    ignore_https_errors=True,
-                )
+        async def _run_extraction(browser_instance: Browser):
+            context: BrowserContext = await browser_instance.new_context(
+                user_agent=USER_AGENT,
+                viewport={"width": 1280, "height": 900},
+                ignore_https_errors=True,
+            )
 
                 async def intercept(route):
                     if route.request.resource_type in ["image", "media", "font"]:
@@ -96,7 +94,16 @@ class GenericExtractor:
                     except Exception as exc:
                         logger.warning("Error en artículo %s: %s", link, exc)
 
-                await browser.close()
+            await context.close()
+
+        try:
+            if existing_browser:
+                await _run_extraction(existing_browser)
+            else:
+                async with async_playwright() as pw:
+                    browser: Browser = await pw.chromium.launch(headless=True)
+                    await _run_extraction(browser)
+                    await browser.close()
 
         except Exception as exc:
             log["error"] = str(exc)
