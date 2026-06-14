@@ -332,9 +332,12 @@ if run:
             all_log.append(log)
             progress.progress((i + 1) / total, text=f"{i+1}/{total} fuentes procesadas")
 
-    import nest_asyncio
-    nest_asyncio.apply()
-    asyncio.run(run_all())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(run_all())
+    finally:
+        loop.close()
     progress.empty()
     status_box.empty()
 
