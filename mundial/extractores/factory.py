@@ -1,5 +1,5 @@
 from urllib.parse import urlparse
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 from mundial.extractores.as_ import AsExtractor
 from mundial.extractores.marca import MarcaExtractor
 from mundial.extractores.mundodeportivo import MundoDeportivoExtractor

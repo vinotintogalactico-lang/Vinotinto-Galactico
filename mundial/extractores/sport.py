@@ -5,7 +5,7 @@ Filtramos links para que solo incluyan /real-madrid/ (u otra sección del Excel)
 """
 from urllib.parse import urlparse
 from playwright.async_api import Page
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 
 
 class SportExtractor(GenericExtractor):

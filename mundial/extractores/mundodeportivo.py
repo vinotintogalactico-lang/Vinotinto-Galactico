@@ -1,6 +1,6 @@
 """Extractor para mundodeportivo.com"""
 from playwright.async_api import Page
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 
 
 class MundoDeportivoExtractor(GenericExtractor):

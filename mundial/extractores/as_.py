@@ -3,7 +3,7 @@ Navega a la sección exacta del Excel y recoge links del área principal de noti
 NO filtra por prefijo de URL ya que los artículos de As tienen paths distintos a la sección.
 """
 from playwright.async_api import Page
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 
 
 class AsExtractor(GenericExtractor):

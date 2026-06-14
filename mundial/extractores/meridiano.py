@@ -1,6 +1,6 @@
 """Extractor para meridiano.com.ve y otras fuentes venezolanas"""
 from playwright.async_api import Page
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 
 
 class MeridianoExtractor(GenericExtractor):

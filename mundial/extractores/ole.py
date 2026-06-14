@@ -1,6 +1,6 @@
 """Extractor para ole.com.ar"""
 from playwright.async_api import Page
-from mundial.extractores.generic_mundial import GenericExtractor
+from mundial.extractores.generic import GenericExtractor
 
 
 class OleExtractor(GenericExtractor):
