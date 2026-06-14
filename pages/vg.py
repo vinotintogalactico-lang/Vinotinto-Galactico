@@ -323,19 +323,17 @@ if run:
     flat_sources = [(cat, f) for cat, fuentes in selected.items() for f in fuentes]
     total = len(flat_sources)
 
-    from playwright.async_api import async_playwright
     async def run_all():
-        async with async_playwright() as pw:
-            browser = await pw.chromium.launch(headless=True)
-            for i, (cat, f) in enumerate(flat_sources):
-                status_box.info(f"🔍 Procesando: **{f['nombre']}** — {cat}")
-                extractor = get_extractor(f["nombre"], f["url"], cat)
-                noticias, log = await extractor.extract(existing_browser=browser)
-                all_noticias.extend(noticias)
-                all_log.append(log)
-                progress.progress((i + 1) / total, text=f"{i+1}/{total} fuentes procesadas")
-            await browser.close()
+        for i, (cat, f) in enumerate(flat_sources):
+            status_box.info(f"🔍 Procesando: **{f['nombre']}** — {cat}")
+            extractor = get_extractor(f["nombre"], f["url"], cat)
+            noticias, log = await extractor.extract()
+            all_noticias.extend(noticias)
+            all_log.append(log)
+            progress.progress((i + 1) / total, text=f"{i+1}/{total} fuentes procesadas")
 
+    import nest_asyncio
+    nest_asyncio.apply()
     asyncio.run(run_all())
     progress.empty()
     status_box.empty()
