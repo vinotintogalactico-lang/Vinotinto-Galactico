@@ -36,17 +36,17 @@ section[data-testid="stSidebar"] > div:first-child { padding-top: 0.5rem; }
 
 /* BANNER — proporciones YouTube 16:9 recortado a 1/3 alto */
 .vg-banner-wrap {
-    margin: -4rem -4rem 0 -4rem;
+    margin: -1rem -1rem 0 -1rem;
     overflow: hidden; position: relative; background: #0d0d0d;
-    aspect-ratio: 16/5;
+    height: 160px;
 }
 .vg-banner-wrap img {
     width: 100%; height: 100%; display: block;
-    object-fit: cover; object-position: center 20%;
+    object-fit: cover; object-position: center 30%;
 }
 .vg-banner-wrap::after {
     content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-    height: 60px; background: linear-gradient(transparent, #0e1117);
+    height: 40px; background: linear-gradient(transparent, #0e1117);
 }
 
 /* BOTONES MODO */
@@ -148,17 +148,6 @@ st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
 # BOTONES DE MODO
 # ════════════════════════════════════════════════════════════
 modo = st.session_state.modo
-vg_bg  = "linear-gradient(135deg,#7a1a2e,#c0392b)" if modo == "vg"  else "#1c1c1c"
-mun_bg = "linear-gradient(135deg,#1a3d1a,#2e7d32)" if modo == "mundial" else "#1c1c1c"
-
-st.markdown(f"""
-<style>
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"]:nth-child(1) button
-  {{ background:{vg_bg} !important; box-shadow:{'0 4px 15px rgba(192,57,43,.5)' if modo=='vg' else 'none'} !important; }}
-div[data-testid="stHorizontalBlock"] div[data-testid="stButton"]:nth-child(2) button
-  {{ background:{mun_bg} !important; box-shadow:{'0 4px 15px rgba(46,125,50,.5)' if modo=='mundial' else 'none'} !important; }}
-</style>""", unsafe_allow_html=True)
-
 col_vg, col_mun = st.columns(2)
 with col_vg:
     if st.button("⚽  VINOTINTO GALÁCTICO", use_container_width=True, key="btn_vg"):
@@ -173,7 +162,32 @@ with col_mun:
 
 modo   = st.session_state.modo
 accent = "#e05263" if modo == "vg" else "#4caf50"
-st.markdown(f"<hr style='border-color:#2a2a2a;margin:.6rem 0 1rem 0;'>", unsafe_allow_html=True)
+
+# CSS para colorear el botón activo vs inactivo
+if modo == "vg":
+    st.markdown("""<style>
+section.main div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"]:nth-child(1) button{
+    background:linear-gradient(135deg,#7a1a2e,#c0392b) !important;
+    box-shadow:0 4px 15px rgba(192,57,43,.6) !important;
+}
+section.main div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"]:nth-child(2) button{
+    background:#222 !important; border:1px solid #444 !important;
+    box-shadow:none !important;
+}
+</style>""", unsafe_allow_html=True)
+else:
+    st.markdown("""<style>
+section.main div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"]:nth-child(1) button{
+    background:#222 !important; border:1px solid #444 !important;
+    box-shadow:none !important;
+}
+section.main div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"]:nth-child(2) button{
+    background:linear-gradient(135deg,#1a3d1a,#2e7d32) !important;
+    box-shadow:0 4px 15px rgba(46,125,50,.6) !important;
+}
+</style>""", unsafe_allow_html=True)
+
+st.markdown("<hr style='border-color:#2a2a2a;margin:.6rem 0 1rem 0;'>", unsafe_allow_html=True)
 
 # ════════════════════════════════════════════════════════════
 # IMPORTS SEGÚN MODO
@@ -291,30 +305,26 @@ with col_title:
 
 with col_prensa:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-    if modo == "vg" and prensa_html_content:
-        html_json = json.dumps(prensa_html_content)
-        btn_prensa = f"""
-        <style>
-        body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
-        button{{
-            background:linear-gradient(135deg,#7a1a2e,#c0392b);
-            color:white;border:none;padding:.55rem .4rem;
-            font-family:'Bebas Neue',sans-serif;font-size:1.05rem;
-            letter-spacing:1px;border-radius:6px;cursor:pointer;
-            width:100%;box-shadow:0 4px 15px rgba(192,57,43,.4);
-            transition:all .2s;box-sizing:border-box;
-        }}
-        button:hover{{transform:translateY(-1px);filter:brightness(1.15);}}
-        </style>
-        <button onclick='(function(){{
-            var w=window.open("","_blank");
-            if(w){{w.document.open();w.document.write({html_json});w.document.close();}}
-            else{{alert("Habilita ventanas emergentes.");}}
-        }})()'>🗞️ PRENSA DEPORTIVA</button>"""
-        components.html(btn_prensa, height=58)
-    elif modo == "vg" and not prensa_html_content:
-        st.warning("Prensa_Deportiva.html no encontrado")
-    # En modo mundial esta columna queda vacía (sin texto)
+    if modo == "vg":
+        if prensa_html_content:
+            # Codificar el HTML como base64 para data URL — evita problemas con json.dumps
+            prensa_b64 = base64.b64encode(prensa_html_content.encode("utf-8")).decode()
+            btn_prensa = f"""<style>
+body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
+button{{
+  background:linear-gradient(135deg,#7a1a2e,#c0392b);
+  color:white;border:none;padding:.55rem .4rem;
+  font-family:'Bebas Neue',sans-serif;font-size:1.05rem;
+  letter-spacing:1px;border-radius:6px;cursor:pointer;
+  width:100%;box-shadow:0 4px 15px rgba(192,57,43,.4);
+  transition:all .2s;box-sizing:border-box;
+}}
+button:hover{{transform:translateY(-1px);filter:brightness(1.15);}}
+</style>
+<button onclick="window.open('data:text/html;base64,{prensa_b64}','_blank')">🗞️ PRENSA DEPORTIVA</button>"""
+            components.html(btn_prensa, height=58)
+        else:
+            st.warning("Prensa_Deportiva.html no encontrado")
 
 with col_extraer:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
@@ -379,8 +389,6 @@ if st.session_state.resultado:
 
     st.markdown("---")
     tabs_labels = [f"📰 Noticias ({len(noticias)})", "📋 Informe de control"]
-    if res.get("modo") == "vg":
-        tabs_labels.append("🗞️ Panel de Prensa")
     tab_objs = st.tabs(tabs_labels)
 
     # ── TAB NOTICIAS ────────────────────────────────────────
@@ -425,13 +433,6 @@ if st.session_state.resultado:
                 f"{entry['estado']}{err}"
             )
 
-    # ── TAB PANEL DE PRENSA (solo VG) ───────────────────────
-    if res.get("modo") == "vg" and len(tab_objs) > 2:
-        with tab_objs[2]:
-            if prensa_html_content:
-                components.html(prensa_html_content, height=800, scrolling=True)
-            else:
-                st.error("No se encontró Prensa_Deportiva.html")
 
 else:
     # ── PANTALLA DE BIENVENIDA ───────────────────────────────
