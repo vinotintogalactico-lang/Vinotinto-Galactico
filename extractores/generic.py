@@ -54,11 +54,8 @@ class GenericExtractor:
         }
 
         try:
-            import gc
-            gc.collect() # Limpia memoria antes de empezar
-
             async with async_playwright() as pw:
-                # Configuración estándar y estable para servidores Cloud
+                # Configuración de Chromium ultra-liviana
                 browser: Browser = await pw.chromium.launch(
                     headless=True,
                     args=[
@@ -66,28 +63,40 @@ class GenericExtractor:
                         "--no-sandbox",
                         "--disable-setuid-sandbox",
                         "--disable-gpu",
-                        "--no-zygote"
+                        "--no-zygote",
+                        "--disable-extensions",
+                        "--mute-audio",
+                        "--disable-background-networking",
+                        "--disable-component-update"
                     ]
                 )
                 
-                # Creamos el contexto. DESACTIVAMOS JavaScript para las noticias.
-                # La mayoría de diarios deportivos tienen el texto en el HTML base.
-                # Sin JS, el consumo de RAM baja un 80% y no habrá crasheos.
                 context: BrowserContext = await browser.new_context(
                     user_agent=USER_AGENT,
-                    viewport={"width": 1280, "height": 900},
+                    viewport={"width": 1024, "height": 768}, # Viewport pequeño para ahorrar RAM
                     ignore_https_errors=True,
-                    java_script_enabled=False # <-- ESTO ES CLAVE PARA LA ESTABILIDAD
                 )
 
+                # BLOQUEO DE BASURA: Esto evita que AS y Mundo Deportivo colapsen la RAM
+                async def interceptar(route):
+                    if route.request.resource_type in ["image", "media", "font"]:
+                        await route.abort()
+                    else:
+                        await route.continue_()
+                await context.route("**/*", interceptar)
+
+                # 1. Obtener los enlaces de la sección
                 page: Page = await context.new_page()
-                await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
-                
-                links = await self._get_article_links(page)
-                log["encontradas"] = len(links)
+                try:
+                    await page.goto(self.url, timeout=30000, wait_until="domcontentloaded")
+                    await page.wait_for_timeout(2000)
+                    links = await self._get_article_links(page)
+                    log["encontradas"] = len(links)
+                finally:
+                    # Cerramos la pestaña de la sección de inmediato para liberar RAM
+                    await page.close()
 
-                await page.close() # Cerramos la página de la sección rápido
-
+                # 2. Procesar cada noticia
                 for link in links:
                     if len(noticias) >= MAX_NEWS:
                         break
@@ -96,13 +105,13 @@ class GenericExtractor:
                         if articulo:
                             if not is_valid_content(articulo.get("title", ""), self.categoria, articulo.get("body", "")):
                                 continue
-                            valid_date, date_log = is_today(articulo.get("date", ""))
+                            valid_date, _ = is_today(articulo.get("date", ""))
                             if valid_date:
                                 articulo["fuente"] = self.fuente
                                 articulo["categoria"] = self.categoria
                                 noticias.append(articulo)
-                    except Exception as exc:
-                        logger.error("Error en artículo %s: %s", link, exc)
+                    except Exception:
+                        continue # Si una noticia falla, pasamos a la siguiente
 
                 await browser.close()
 
