@@ -54,14 +54,20 @@ class GenericExtractor:
         }
 
         try:
+            import gc
+            gc.collect()
+            
             async with async_playwright() as pw:
                 browser: Browser = await pw.chromium.launch(
                     headless=True,
                     args=[
                         "--disable-dev-shm-usage",
                         "--no-sandbox",
+                        "--disable-setuid-sandbox",
                         "--disable-gpu",
-                        "--single-process"
+                        "--no-zygote",
+                        "--disable-extensions",
+                        "--mute-audio"
                         ]
                 )       
                 context: BrowserContext = await browser.new_context(
@@ -70,15 +76,15 @@ class GenericExtractor:
                     ignore_https_errors=True,
                 )
                  # --- NUEVO: BLOQUEAR IMÁGENES, VIDEOS Y CSS PARA NO COLAPSAR LA NUBE ---
-                async def interceptar_rutas(route):
-                    if route.request.resource_type in ["image", "media", "font", "stylesheet"]:
+                async def intercept_route(route):
+                    if route.request.resource_type in ["image", "media", "font"]:
                         await route.abort()
                     else:
                         await route.continue_()
                 
-                await context.route("**/*", interceptar_rutas)
+                await context.route("**/*", intercept_route)
                 # ----------------------------------------------------------------------
-                
+
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
                 await page.wait_for_timeout(3000)
