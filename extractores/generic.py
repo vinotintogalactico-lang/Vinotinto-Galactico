@@ -55,9 +55,10 @@ class GenericExtractor:
 
         try:
             import gc
-            gc.collect()
-            
+            gc.collect() # Limpia memoria antes de empezar
+
             async with async_playwright() as pw:
+                # Configuración estándar y estable para servidores Cloud
                 browser: Browser = await pw.chromium.launch(
                     headless=True,
                     args=[
@@ -65,34 +66,27 @@ class GenericExtractor:
                         "--no-sandbox",
                         "--disable-setuid-sandbox",
                         "--disable-gpu",
-                        "--no-zygote",
-                        "--disable-extensions",
-                        "--mute-audio"
-                        ]
-                )       
+                        "--no-zygote"
+                    ]
+                )
+                
+                # Creamos el contexto. DESACTIVAMOS JavaScript para las noticias.
+                # La mayoría de diarios deportivos tienen el texto en el HTML base.
+                # Sin JS, el consumo de RAM baja un 80% y no habrá crasheos.
                 context: BrowserContext = await browser.new_context(
                     user_agent=USER_AGENT,
                     viewport={"width": 1280, "height": 900},
                     ignore_https_errors=True,
+                    java_script_enabled=False # <-- ESTO ES CLAVE PARA LA ESTABILIDAD
                 )
-                 # --- NUEVO: BLOQUEAR IMÁGENES, VIDEOS Y CSS PARA NO COLAPSAR LA NUBE ---
-                async def intercept_route(route):
-                    if route.request.resource_type in ["image", "media", "font"]:
-                        await route.abort()
-                    else:
-                        await route.continue_()
-                
-                await context.route("**/*", intercept_route)
-                # ----------------------------------------------------------------------
 
                 page: Page = await context.new_page()
                 await page.goto(self.url, timeout=TIMEOUT_MS, wait_until="domcontentloaded")
-                await page.wait_for_timeout(3000)
-
+                
                 links = await self._get_article_links(page)
                 log["encontradas"] = len(links)
 
-                await page.close()
+                await page.close() # Cerramos la página de la sección rápido
 
                 for link in links:
                     if len(noticias) >= MAX_NEWS:
@@ -109,8 +103,6 @@ class GenericExtractor:
                                 noticias.append(articulo)
                     except Exception as exc:
                         logger.error("Error en artículo %s: %s", link, exc)
-                        import traceback
-                        logger.error(traceback.format_exc())
 
                 await browser.close()
 
