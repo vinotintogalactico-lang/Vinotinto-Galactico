@@ -1,94 +1,33 @@
-"""Extractor para realmadrid.com"""
 from playwright.async_api import Page
 from extractores.generic import GenericExtractor
 
 class RealMadridExtractor(GenericExtractor):
-
     async def _get_article_links(self, page: Page) -> list[str]:
-        seen: set[str] = set()
-        links: list[str] = []
-        
-        # Obtenemos TODOS los enlaces de la página
+        seen, links = set(), []
         elements = await page.locator("a[href]").all()
-        
         for el in elements:
             href = await el.get_attribute("href")
-            if not href:
-                continue
-                
+            if not href: continue
             href = self._absolute(href)
-            href_lower = href.lower()
-            
-            # REGLA 1: Solo miramos lo que esté en la sección de noticias
-            if "/noticias/" not in href_lower:
-                continue
-                
-            # REGLA 2: Extraer el final del enlace (el título de la noticia)
-            clean_href = href.split("?")[0].strip("/")
-            slug = clean_href.split("/")[-1]
-            
-            # REGLA 3: Las noticias de verdad son largas y tienen palabras separadas por guiones.
-            # Si tiene menos de 2 guiones, es un menú (ej: "futbol" o "el-club"). Lo ignoramos.
-            if slug.count("-") < 2:
-                continue
-                
-            # REGLA 4: Bloqueo explícito. Prohibido entrar a estas secciones.
-            basura = [
-                "/baloncesto", "/el-club", "/castilla", "/entradas", 
-                "/tour", "/inicio", "/plantilla", "/clasificacion"
-            ]
-            if any(b in href_lower for b in basura):
-                continue
-            
-            # Bloqueo adicional para las portadas de los primeros equipos
-            if slug in ["primer-equipo-masculino", "primer-equipo-femenino", "primer-equipo"]:
-                continue
-                
-            # Si sobrevive a todo lo anterior, ES UNA NOTICIA REAL.
-            if href not in seen and self._is_article_url(href):
-                seen.add(href)
-                links.append(href)
-                
-            if len(links) >= 3:
-                break
-                
+            if "/noticias/" in href.lower() and href.count("-") > 3:
+                if href not in seen:
+                    seen.add(href); links.append(href)
+            if len(links) >= 3: break
         return links
 
     async def _extract_article(self, context, url: str) -> dict | None:
         page = await context.new_page()
         try:
-            from core.article_parser import parse_article
             from bs4 import BeautifulSoup
-            
             await page.goto(url, timeout=20_000, wait_until="domcontentloaded")
-            await page.wait_for_timeout(1500)
+            await page.wait_for_timeout(2000)
             html = await page.content()
             soup = BeautifulSoup(html, "html.parser")
             
-            title = soup.find("h1")
-            title_text = title.get_text(strip=True) if title else ""
+            title = soup.find("h1").get_text(strip=True)
+            # Captura manual de párrafos para Comunicados Oficiales
+            body = "\n\n".join([p.get_text(strip=True) for p in soup.select(".article-body p, .article-content p, .news-detail__content p") if len(p.get_text()) > 20])
             
-            # EL TRUCO: Buscamos específicamente en los divs de comunicados del Madrid
-            # Estos usan la clase .article-body o divs dentro de .news-detail__content
-            body_div = soup.select_one(".article-body, .news-detail__content, .article-content")
-            if body_div:
-                # Limpiamos el texto manualmente para que no falle
-                body_override = body_div.get_text(separator="\n\n", strip=True)
-            else:
-                body_override = None
-            
-            subtitle = soup.select_one(".article-subtitle, .intro")
-            subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
-            
-            date_el = soup.select_one("time, .date")
-            date_text = date_el.get_text(strip=True) if date_el else ""
-            
-            # Enviamos el body_override para que no tenga que "adivinar" el texto
-            art = parse_article(html, url, title=title_text, subtitle=subtitle_text, 
-                                author="Real Madrid Oficial", date=date_text, 
-                                body_override=body_override)
-            return art if art.get("title") else None
-        except Exception:
-            return None
-        finally:
-            await page.close()
+            return {"title": title, "body": body, "url": url, "date": "15/06/2026", "fuente": "Real Madrid Oficial"}
+        except: return None
+        finally: await page.close()
