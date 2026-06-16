@@ -63,25 +63,28 @@ class RealMadridExtractor(GenericExtractor):
             await page.goto(url, timeout=20_000, wait_until="domcontentloaded")
             await page.wait_for_timeout(1500)
             html = await page.content()
-            
             soup = BeautifulSoup(html, "html.parser")
             
             title = soup.find("h1")
             title_text = title.get_text(strip=True) if title else ""
             
+            # Selector específico para el cuerpo del Madrid (Noticias y Comunicados)
+            body_container = soup.select_one(".article-body, .article-content, .news-detail__content")
+            body_override = body_container.get_text(separator="\n\n", strip=True) if body_container else None
+            
             subtitle = soup.select_one(".article-subtitle, .intro, p.lead")
             subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
             
-            author = soup.select_one(".author, .article-author")
-            author_text = author.get_text(strip=True) if author else "Real Madrid"
+            author_text = "Real Madrid Oficial"
             
             date_el = soup.select_one("time, .date, .article-date")
             date_text = date_el.get_text(strip=True) if date_el else ""
             
-            art = parse_article(html, url, title=title_text, subtitle=subtitle_text, author=author_text, date=date_text)
+            # Pasamos el body_override para que el parser no use Readability si ya encontramos el texto
+            art = parse_article(html, url, title=title_text, subtitle=subtitle_text, 
+                                author=author_text, date=date_text, body_override=body_override)
             return art if art.get("title") else None
-        except Exception as e:
-            print("ERROR IN EXTRACT_ARTICLE:", repr(e))
+        except Exception:
             return None
         finally:
             await page.close()

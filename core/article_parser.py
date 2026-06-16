@@ -34,9 +34,9 @@ def parse_article(html: str, url: str, **kwargs) -> dict:
         paragraphs = []
         for tag in clean_soup.find_all(["p", "h2", "h3", "h4", "li"]):
             text = tag.get_text(separator=" ", strip=True)
-            # Filtro adicional anti-basura
-            if len(text) > 15 and not any(x in text.lower() for x in [
-                "iniciar sesión", "suscríbete", "menú", "leer más", "te puede interesar", "newsletter", "publicidad"
+            # Bajamos el límite de 15 a 5 caracteres para no perder frases cortas de comunicados
+            if len(text) > 5 and not any(x in text.lower() for x in [
+                "iniciar sesión", "suscríbete", "menú", "leer más", "newsletter"
             ]):
                 paragraphs.append(text)
                 

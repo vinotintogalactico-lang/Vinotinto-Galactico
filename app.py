@@ -309,27 +309,36 @@ with col_title:
 with col_prensa:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
     if modo == "vg":
-        if prensa_html_content:
-            import urllib.parse
-            encoded = urllib.parse.quote(prensa_html_content, safe='')
-            btn_prensa = f"""<style>
-body{{margin:0;padding:0;background:transparent;overflow:hidden;}}
-a{{
-  display:block;
-  background:linear-gradient(135deg,#7a1a2e,#c0392b);
-  color:white !important;border:none;padding:.55rem .4rem;
-  font-family:'Bebas Neue',sans-serif;font-size:1.05rem;
-  letter-spacing:1px;border-radius:6px;cursor:pointer;
-  width:100%;box-shadow:0 4px 15px rgba(192,57,43,.4);
-  transition:all .2s;box-sizing:border-box;
-  text-align:center;text-decoration:none;
-}}
-a:hover{{transform:translateY(-1px);filter:brightness(1.15);}}
-</style>
-<a href="data:text/html;charset=utf-8,{encoded}" target="_blank">🗞️ PRENSA DEPORTIVA</a>"""
-            components.html(btn_prensa, height=58)
+        # Ruta para Windows local
+        path_prensa = Path("Prensa Deportiva/Prensa_Deportiva.html")
+        if path_prensa.exists():
+            try:
+                import base64
+                contenido = path_prensa.read_bytes()
+                b64_html = base64.b64encode(contenido).decode()
+                # Creamos un enlace que parece un botón
+                btn_html = f'''
+                <a href="data:text/html;base64,{b64_html}" target="_blank" style="text-decoration: none;">
+                    <div style="
+                        background: linear-gradient(135deg,#7a1a2e,#c0392b);
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 6px;
+                        text-align: center;
+                        font-family: 'Bebas Neue', sans-serif;
+                        font-size: 1.1rem;
+                        letter-spacing: 1px;
+                        box-shadow: 0 4px 15px rgba(192,57,43,.4);
+                        cursor: pointer;
+                        transition: 0.3s;
+                    ">🗞️ PRENSA DEPORTIVA</div>
+                </a>
+                '''
+                st.markdown(btn_html, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error al cargar: {e}")
         else:
-            st.warning("Prensa_Deportiva.html no encontrado")
+            st.warning("Archivo no encontrado")
 
 with col_extraer:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
