@@ -309,36 +309,25 @@ with col_title:
 with col_prensa:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
     if modo == "vg":
-        # Ruta para Windows local
-        path_prensa = Path("Prensa Deportiva/Prensa_Deportiva.html")
-        if path_prensa.exists():
-            try:
-                import base64
-                contenido = path_prensa.read_bytes()
-                b64_html = base64.b64encode(contenido).decode()
-                # Creamos un enlace que parece un botón
-                btn_html = f'''
-                <a href="data:text/html;base64,{b64_html}" target="_blank" style="text-decoration: none;">
-                    <div style="
-                        background: linear-gradient(135deg,#7a1a2e,#c0392b);
-                        color: white;
-                        padding: 10px 15px;
-                        border-radius: 6px;
-                        text-align: center;
-                        font-family: 'Bebas Neue', sans-serif;
-                        font-size: 1.1rem;
-                        letter-spacing: 1px;
-                        box-shadow: 0 4px 15px rgba(192,57,43,.4);
-                        cursor: pointer;
-                        transition: 0.3s;
-                    ">🗞️ PRENSA DEPORTIVA</div>
-                </a>
-                '''
-                st.markdown(btn_html, unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Error al cargar: {e}")
+        # Ruta exacta según tu captura de carpetas
+        path_html = Path("Prensa Deportiva/Prensa_Deportiva.html")
+        if path_html.exists():
+            import base64
+            # Leemos el archivo y lo convertimos en un link "data"
+            encoded_html = base64.b64encode(path_html.read_bytes()).decode()
+            # Este código crea un botón real que abre el HTML en una pestaña nueva
+            btn_code = f'''
+            <a href="data:text/html;base64,{encoded_html}" target="_blank" style="text-decoration: none;">
+                <div style="background: linear-gradient(135deg,#7a1a2e,#c0392b); color: white; 
+                padding: 10px; border-radius: 6px; text-align: center; font-family: 'Bebas Neue', sans-serif;
+                letter-spacing: 1px; box-shadow: 0 4px 15px rgba(192,57,43,.4); cursor: pointer;">
+                    🗞️ PRENSA DEPORTIVA
+                </div>
+            </a>
+            '''
+            st.markdown(btn_code, unsafe_allow_html=True)
         else:
-            st.warning("Archivo no encontrado")
+            st.error("Archivo no encontrado en la carpeta Prensa Deportiva")
 
 with col_extraer:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)

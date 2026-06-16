@@ -68,21 +68,25 @@ class RealMadridExtractor(GenericExtractor):
             title = soup.find("h1")
             title_text = title.get_text(strip=True) if title else ""
             
-            # Selector específico para el cuerpo del Madrid (Noticias y Comunicados)
-            body_container = soup.select_one(".article-body, .article-content, .news-detail__content")
-            body_override = body_container.get_text(separator="\n\n", strip=True) if body_container else None
+            # EL TRUCO: Buscamos específicamente en los divs de comunicados del Madrid
+            # Estos usan la clase .article-body o divs dentro de .news-detail__content
+            body_div = soup.select_one(".article-body, .news-detail__content, .article-content")
+            if body_div:
+                # Limpiamos el texto manualmente para que no falle
+                body_override = body_div.get_text(separator="\n\n", strip=True)
+            else:
+                body_override = None
             
-            subtitle = soup.select_one(".article-subtitle, .intro, p.lead")
+            subtitle = soup.select_one(".article-subtitle, .intro")
             subtitle_text = subtitle.get_text(strip=True) if subtitle else ""
             
-            author_text = "Real Madrid Oficial"
-            
-            date_el = soup.select_one("time, .date, .article-date")
+            date_el = soup.select_one("time, .date")
             date_text = date_el.get_text(strip=True) if date_el else ""
             
-            # Pasamos el body_override para que el parser no use Readability si ya encontramos el texto
+            # Enviamos el body_override para que no tenga que "adivinar" el texto
             art = parse_article(html, url, title=title_text, subtitle=subtitle_text, 
-                                author=author_text, date=date_text, body_override=body_override)
+                                author="Real Madrid Oficial", date=date_text, 
+                                body_override=body_override)
             return art if art.get("title") else None
         except Exception:
             return None

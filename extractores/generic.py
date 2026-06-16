@@ -97,22 +97,18 @@ class GenericExtractor:
         return noticias, log
 
     async def _get_article_links(self, page: Page) -> list[str]:
-        # Extraemos palabras clave de la URL del Excel para filtrar
-        path_original = urlparse(self.url).path.lower()
-        # Si la ruta es muy corta (ej: /), buscamos por dominio
-        keyword = path_original.strip('/').split('/')[0] if len(path_original) > 1 else ""
+        # Sacamos la palabra clave del link del Excel (ej: 'real-madrid' o 'vinotinto')
+        url_parts = [p for p in urlparse(self.url).path.split("/") if p]
+        keyword = url_parts[-1] if url_parts else ""
 
         seen: set[str] = set()
         batch: list[str] = []
 
-        # Priorizar enlaces dentro del área de contenido principal para evitar footers
-        # Intentamos buscar en contenedores comunes de noticias
-        container = page.locator("main, #content, .site-content, #main, .main-content").first
-        if await container.count() == 0:
-            container = page # Si no hay main, usamos toda la página
+        # Solo buscamos links dentro del área principal de la noticia, no en el menú o el fondo
+        container = page.locator("main, #content, .site-content, #main").first
+        if await container.count() == 0: container = page
 
         all_links = await container.locator("a[href]").all()
-        
         for el in all_links:
             href = await el.get_attribute("href")
             if not href: continue
@@ -120,29 +116,22 @@ class GenericExtractor:
 
             if not self._is_same_domain(href): continue
             
-            # FILTRO CRÍTICO: Si la URL del Excel tiene una sección (ej: /real-madrid/), 
-            # la noticia debe tener esa palabra en su URL.
+            # REGLA DE OBEDIENCIA: Si el link de la noticia no contiene la sección del Excel, se ignora.
+            # Esto evita que se meta en "Mercado de fichajes" si tú pediste "Real Madrid"
             if keyword and keyword not in href.lower():
                 continue
 
-            # Excluir bad segments
-            if any(b in href.lower() for b in ["/autor/", "/tags/", "/seccion/", "/category/", "/page/", "#"]):
-                continue
-
+            # Limpieza básica
+            if any(b in href.lower() for b in ["/autor/", "/tags/", "/seccion/", "#"]): continue
             if href in seen: continue
 
-            # Lógica de slug con guiones
             path = urlparse(href).path
             segments = [p for p in path.split("/") if p]
-            if not segments: continue
-            
-            last_slug = segments[-1].replace(".html", "")
-            if last_slug.count("-") < 2: continue
+            if len(segments) < 2: continue
 
             seen.add(href)
             batch.append(href)
             if len(batch) >= 15: break
-
         return batch
 
     async def _extract_article(self, context: BrowserContext, url: str) -> dict | None:
