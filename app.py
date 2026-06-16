@@ -329,11 +329,6 @@ with col_prensa:
         else:
             st.error("Archivo no encontrado en la carpeta Prensa Deportiva")
 
-with col_extraer:
-    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-    run = st.button("⚡ EXTRAER NOTICIAS", disabled=total_sel == 0,
-                    use_container_width=True, key="btn_extraer")
-
 st.markdown("<hr style='border-color:#2a2a2a;margin-top:.5rem;'>", unsafe_allow_html=True)
 
 # ════════════════════════════════════════════════════════════
