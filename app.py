@@ -290,18 +290,18 @@ titulo_modo = "VINOTINTO GALÁCTICO" if modo == "vg" else "MUNDIAL 2026"
 emoji_modo  = "⚽" if modo == "vg" else "🌍"
 
 # Columnas: título | prensa deportiva (solo VG) | extraer
+# ════════════════════════════════════════════════════════════
+# BARRA TÍTULO + BOTONES ACCIÓN
+# ════════════════════════════════════════════════════════════
 col_title, col_prensa, col_extraer = st.columns([3, 1, 1])
 
 with col_title:
     st.markdown(f"""
     <div style="padding:.4rem 0 .2rem 0;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;
-                  color:#fff;letter-spacing:3px;line-height:1;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem; color:#fff;letter-spacing:3px;line-height:1;">
         {emoji_modo} NEWS EXTRACTOR · {titulo_modo}
       </div>
-      <div style="background:{accent};color:#fff;font-size:.72rem;
-                  padding:.15rem .65rem;border-radius:20px;letter-spacing:1px;
-                  display:inline-block;margin-top:.3rem;">
+      <div style="background:{accent};color:#fff;font-size:.72rem; padding:.15rem .65rem;border-radius:20px;letter-spacing:1px; display:inline-block;margin-top:.3rem;">
         HOY: {date.today().strftime("%d / %m / %Y")}
       </div>
     </div>""", unsafe_allow_html=True)
@@ -309,27 +309,25 @@ with col_title:
 with col_prensa:
     st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
     if modo == "vg":
-        # Ruta exacta según tu captura de carpetas
-        path_html = Path("Prensa Deportiva/Prensa_Deportiva.html")
-        if path_html.exists():
-            import base64
-            # Leemos el archivo y lo convertimos en un link "data"
-            encoded_html = base64.b64encode(path_html.read_bytes()).decode()
-            # Este código crea un botón real que abre el HTML en una pestaña nueva
-            btn_code = f'''
-            <a href="data:text/html;base64,{encoded_html}" target="_blank" style="text-decoration: none;">
-                <div style="background: linear-gradient(135deg,#7a1a2e,#c0392b); color: white; 
-                padding: 10px; border-radius: 6px; text-align: center; font-family: 'Bebas Neue', sans-serif;
-                letter-spacing: 1px; box-shadow: 0 4px 15px rgba(192,57,43,.4); cursor: pointer;">
-                    🗞️ PRENSA DEPORTIVA
-                </div>
-            </a>
-            '''
-            st.markdown(btn_code, unsafe_allow_html=True)
-        else:
-            st.error("Archivo no encontrado en la carpeta Prensa Deportiva")
+        import base64
+        f_path = Path("Prensa Deportiva/Prensa_Deportiva.html")
+        if f_path.exists():
+            data = base64.b64encode(f_path.read_bytes()).decode()
+            st.markdown(f'''
+                <a href="data:text/html;base64,{data}" target="_blank" style="text-decoration:none;">
+                    <div style="background:linear-gradient(135deg,#7a1a2e,#c0392b);color:white;
+                    padding:10px;border-radius:6px;text-align:center;font-family:'Bebas Neue',sans-serif;
+                    font-size:1.05rem;box-shadow:0 4px 15px rgba(0,0,0,0.3);cursor:pointer;">
+                        🗞️ PRENSA DEPORTIVA
+                    </div>
+                </a>
+            ''', unsafe_allow_html=True)
 
-st.markdown("<hr style='border-color:#2a2a2a;margin-top:.5rem;'>", unsafe_allow_html=True)
+with col_extraer:
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+    # AQUÍ ESTÁ LA VARIABLE 'run' QUE FALTABA
+    run = st.button("⚡ EXTRAER NOTICIAS", disabled=total_sel == 0,
+                    use_container_width=True, key="btn_extraer")
 
 # ════════════════════════════════════════════════════════════
 # EXTRACCIÓN
